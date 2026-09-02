@@ -12,6 +12,7 @@ bun.lock
 dist/
 build/
 out/
+.next/
 
 # Logs & Runtime
 *.log
