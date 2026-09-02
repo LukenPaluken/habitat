@@ -1,10 +1,10 @@
-# Areaprop
+# Habitat
 
-A modern real estate web platform inspired by Zonaprop, developed as an academic project.
+A modern real estate web platform inspired by Habitat, developed as an academic project.
 
 ## Overview
 
-Areaprop is a full-featured real estate web application designed to streamline property discovery, listings management, and direct inquiries. The platform supports dedicated user roles, allowing individual clients and real estate agencies (*inmobiliarias*) to browse, publish, and manage property portfolios seamlessly.
+Habitat is a full-featured real estate web application designed to streamline property discovery, listings management, and direct inquiries. The platform supports dedicated user roles, allowing individual clients and real estate agencies (*inmobiliarias*) to browse, publish, and manage property portfolios seamlessly.
 
 ### Key Features
 
@@ -31,7 +31,7 @@ Areaprop is a full-featured real estate web application designed to streamline p
 ## Repository Structure
 
 ```text
-areaprop/
+habitat/
 ├── .github/
 │   └── workflows/
 │       └── ci.yml                   # Automated CI workflow (lint, format, typecheck)
@@ -57,8 +57,8 @@ areaprop/
 
 1. **Clone the repository:**
    ```bash
-   git clone https://github.com/LukenPaluken/areaprop.git
-   cd areaprop
+   git clone https://github.com/LukenPaluken/habitat.git
+   cd habitat
    ```
 
 2. **Install dependencies:**
