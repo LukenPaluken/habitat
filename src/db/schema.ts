@@ -124,7 +124,6 @@ export const properties = pgTable(
     updatedAt: timestamp("updated_at").defaultNow().notNull(),
   },
   (table) => [
-    // Business rules constraints
     check("price_positive", sql`${table.price} > 0`),
     check(
       "total_area_positive",
@@ -135,7 +134,6 @@ export const properties = pgTable(
       sql`${table.coveredArea} IS NULL OR ${table.coveredArea} > 0`
     ),
 
-    // Search indexes
     index("idx_properties_operation_type").on(table.operationType),
     index("idx_properties_status").on(table.status),
     index("idx_properties_price").on(table.price),
