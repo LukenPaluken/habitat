@@ -8,22 +8,26 @@ import {
   pgEnum,
   uuid,
   index,
+  uniqueIndex,
   check,
 } from "drizzle-orm/pg-core";
 import { sql } from "drizzle-orm";
+import { user } from "./auth-schema";
 
-export const roleEnum = pgEnum("role", ["client", "agency", "admin"]);
 export const propertyTypeEnum = pgEnum("property_type", [
   "Casa",
   "Departamento",
   "Terreno",
   "Local",
 ]);
+
 export const operationTypeEnum = pgEnum("operation_type", [
   "Venta",
   "Alquiler",
 ]);
+
 export const currencyEnum = pgEnum("currency", ["ARS", "USD"]);
+
 export const propertyStatusEnum = pgEnum("property_status", [
   "BORRADOR",
   "PUBLICADA",
@@ -33,6 +37,7 @@ export const propertyStatusEnum = pgEnum("property_status", [
   "PAUSADA",
   "CANCELADA",
 ]);
+
 export const visitRequestStatusEnum = pgEnum("visit_request_status", [
   "Pendiente",
   "Confirmada",
@@ -40,6 +45,7 @@ export const visitRequestStatusEnum = pgEnum("visit_request_status", [
   "Cancelada",
   "Rechazada",
 ]);
+
 export const activityTypeEnum = pgEnum("activity_type", [
   "new_comment",
   "new_visit",
@@ -47,23 +53,16 @@ export const activityTypeEnum = pgEnum("activity_type", [
   "new_review",
 ]);
 
-export const users = pgTable("users", {
-  id: text("id").primaryKey(),
-  name: text("name").notNull(),
-  email: text("email").notNull().unique(),
-  emailVerified: boolean("email_verified").default(false).notNull(),
-  image: text("image"),
-  role: roleEnum("role").default("client").notNull(),
-  createdAt: timestamp("created_at").defaultNow().notNull(),
-  updatedAt: timestamp("updated_at").defaultNow().notNull(),
-});
-
+// The buyer/renter does't have their own account or table: they identify themselves
+// with their name (or name + phone number) directly when commenting,
+// requesting a visit, or leaving a review. Only the seller has an account, and that
+// account resides in the `user` table managed by Better Auth (see auth-schema.ts).
 export const agencies = pgTable("agencies", {
   id: uuid("id").defaultRandom().primaryKey(),
   userId: text("user_id")
     .notNull()
     .unique()
-    .references(() => users.id, { onDelete: "cascade" }),
+    .references(() => user.id, { onDelete: "cascade" }),
   fantasyName: text("fantasy_name").notNull().unique(),
   description: text("description").notNull(),
   logoUrl: text("logo_url"),
@@ -137,6 +136,11 @@ export const properties = pgTable(
     index("idx_properties_operation_type").on(table.operationType),
     index("idx_properties_status").on(table.status),
     index("idx_properties_price").on(table.price),
+    index("idx_properties_search").on(
+      table.propertyType,
+      table.operationType,
+      table.neighborhood
+    ),
   ]
 );
 
@@ -151,7 +155,12 @@ export const propertyImages = pgTable(
     order: integer("order").default(0).notNull(),
     isCover: boolean("is_cover").default(false).notNull(),
   },
-  (table) => [index("idx_property_images_property_id").on(table.propertyId)]
+  (table) => [
+    index("idx_property_images_property_id").on(table.propertyId),
+    uniqueIndex("idx_one_cover_per_property")
+      .on(table.propertyId)
+      .where(sql`${table.isCover} = true`),
+  ]
 );
 
 export const propertyStateHistory = pgTable(
@@ -166,6 +175,10 @@ export const propertyStateHistory = pgTable(
     createdAt: timestamp("created_at").defaultNow().notNull(),
   },
   (table) => [
+    check(
+      "state_actually_changes",
+      sql`${table.previousState} IS NULL OR ${table.previousState} != ${table.newState}`
+    ),
     index("idx_property_state_history_property_id").on(table.propertyId),
   ]
 );
@@ -181,6 +194,7 @@ export const comments = pgTable(
     content: text("content").notNull(),
     sellerReply: text("seller_reply"),
     createdAt: timestamp("created_at").defaultNow().notNull(),
+    updatedAt: timestamp("updated_at").defaultNow().notNull(),
   },
   (table) => [index("idx_comments_property_id").on(table.propertyId)]
 );
