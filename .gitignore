@@ -27,3 +27,6 @@ tsconfig.tsbuildinfo
 Thumbs.db
 .vscode/
 .idea/
+
+# Files used for planning
+planning_files/

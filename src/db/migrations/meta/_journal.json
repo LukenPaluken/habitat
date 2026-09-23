@@ -8,6 +8,13 @@
       "when": 1790182984555,
       "tag": "0000_pretty_santa_claus",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1790200244087,
+      "tag": "0001_dark_imperial_guard",
+      "breakpoints": true
     }
   ]
 }
