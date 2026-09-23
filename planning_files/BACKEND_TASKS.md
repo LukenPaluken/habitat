@@ -39,30 +39,30 @@ Minimum necessary tasks to complete the backend according to `planning_files/tpo
 
 ---
 
-## [ ] 3. Properties & Search (`/api/properties`)
+## [x] 3. Properties & Search (`/api/properties`)
 
-- [ ] `GET /api/properties`: Public listing with multi-criteria filters:
+- [x] `GET /api/properties`: Public listing with multi-criteria filters:
   - Type (`Casa`, `Departamento`, `Terreno`, `Local`).
   - Operation (`Venta`, `Alquiler`).
   - Price range & currency (`ARS` / `USD`).
   - Neighborhood/zone, rooms, bedrooms, bathrooms.
   - Amenities/tags and free-text search in title/description.
   - Sorting (price, date, area) and pagination.
-- [ ] `POST /api/properties`: Create property (starts in `BORRADOR` or `PUBLICADA`).
-- [ ] `GET /api/properties/[id]`: Full property details with gallery, agency, and Q&A.
-- [ ] `PATCH /api/properties/[id]`: Edit property (blocked if property has pending `Confirmada` visits).
-- [ ] `PATCH /api/properties/[id]/status`: State transitions (`BORRADOR` -> `PUBLICADA` <-> `PAUSADA` -> `RESERVADA` -> `VENDIDA` / `ALQUILADA` / `CANCELADA`).
+- [x] `POST /api/properties`: Create property (starts in `BORRADOR` or `PUBLICADA`).
+- [x] `GET /api/properties/[id]`: Full property details with gallery, agency, and Q&A.
+- [x] `PATCH /api/properties/[id]`: Edit property (blocked if property has pending `Confirmada` visits).
+- [x] `PATCH /api/properties/[id]/status`: State transitions (`BORRADOR` -> `PUBLICADA` <-> `PAUSADA` -> `RESERVADA` -> `VENDIDA` / `ALQUILADA` / `CANCELADA`).
   - Logs every change in `property_state_history`.
   - Dispatches activity notification.
 
 ---
 
-## [ ] 4. Property Images & Uploads
+## [x] 4. Property Images & Uploads
 
-- [ ] Configure UploadThing route handler in `src/app/api/uploadthing/route.ts`.
-- [ ] `POST /api/properties/[id]/images`: Attach uploaded images to property.
-- [ ] `DELETE /api/properties/[id]/images/[imageId]`: Remove image.
-- [ ] `PATCH /api/properties/[id]/images/[imageId]/cover`: Set cover image (`isCover = true`).
+- [x] Configure UploadThing route handler in `src/app/api/uploadthing/route.ts`.
+- [x] `POST /api/properties/[id]/images`: Attach uploaded images to property.
+- [x] `DELETE /api/properties/[id]/images/[imageId]`: Remove image.
+- [x] `PATCH /api/properties/[id]/images/[imageId]/cover`: Set cover image (`isCover = true`).
 
 ---
 
