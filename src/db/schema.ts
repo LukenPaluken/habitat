@@ -11,7 +11,7 @@ import {
   uniqueIndex,
   check,
 } from "drizzle-orm/pg-core";
-import { sql } from "drizzle-orm";
+import { sql, relations } from "drizzle-orm";
 import { user } from "./auth-schema";
 
 export const propertyTypeEnum = pgEnum("property_type", [
@@ -132,7 +132,6 @@ export const properties = pgTable(
       "covered_area_positive",
       sql`${table.coveredArea} IS NULL OR ${table.coveredArea} > 0`
     ),
-
     index("idx_properties_operation_type").on(table.operationType),
     index("idx_properties_status").on(table.status),
     index("idx_properties_price").on(table.price),
@@ -230,3 +229,70 @@ export const activities = pgTable(
   },
   (table) => [index("idx_activities_agency_id").on(table.agencyId)]
 );
+
+// Drizzle relations
+export const agenciesRelations = relations(agencies, ({ one, many }) => ({
+  user: one(user, {
+    fields: [agencies.userId],
+    references: [user.id],
+  }),
+  properties: many(properties),
+  reviews: many(reviews),
+  activities: many(activities),
+}));
+
+export const reviewsRelations = relations(reviews, ({ one }) => ({
+  agency: one(agencies, {
+    fields: [reviews.agencyId],
+    references: [agencies.id],
+  }),
+}));
+
+export const propertiesRelations = relations(properties, ({ one, many }) => ({
+  agency: one(agencies, {
+    fields: [properties.agencyId],
+    references: [agencies.id],
+  }),
+  images: many(propertyImages),
+  stateHistory: many(propertyStateHistory),
+  comments: many(comments),
+  visitRequests: many(visitRequests),
+}));
+
+export const propertyImagesRelations = relations(propertyImages, ({ one }) => ({
+  property: one(properties, {
+    fields: [propertyImages.propertyId],
+    references: [properties.id],
+  }),
+}));
+
+export const propertyStateHistoryRelations = relations(
+  propertyStateHistory,
+  ({ one }) => ({
+    property: one(properties, {
+      fields: [propertyStateHistory.propertyId],
+      references: [properties.id],
+    }),
+  })
+);
+
+export const commentsRelations = relations(comments, ({ one }) => ({
+  property: one(properties, {
+    fields: [comments.propertyId],
+    references: [properties.id],
+  }),
+}));
+
+export const visitRequestsRelations = relations(visitRequests, ({ one }) => ({
+  property: one(properties, {
+    fields: [visitRequests.propertyId],
+    references: [properties.id],
+  }),
+}));
+
+export const activitiesRelations = relations(activities, ({ one }) => ({
+  agency: one(agencies, {
+    fields: [activities.agencyId],
+    references: [agencies.id],
+  }),
+}));

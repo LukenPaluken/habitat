@@ -5,14 +5,19 @@ bun.lock
 
 # Environment variables & secrets
 .env
+.env*.local
 .env.local
-.env.*.local
+.env.development
+.env.test
+.env.production
+!.env.example
 
 # Build & compiled outputs
 dist/
 build/
 out/
 .next/
+tsconfig.tsbuildinfo
 
 # Logs & Runtime
 *.log
