@@ -21,6 +21,7 @@ tsconfig.tsbuildinfo
 
 # Logs & Runtime
 *.log
+planning_files/
 
 # IDE, Editor & OS files
 .DS_Store
