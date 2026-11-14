@@ -1,28 +1,25 @@
 import { z } from "zod";
+import {
+  currencyEnum,
+  operationTypeEnum,
+  propertyStatusEnum,
+  propertyTypeEnum,
+} from "@/models";
 
-export const propertyStatusSchema = z.enum([
-  "BORRADOR",
-  "PUBLICADA",
-  "RESERVADA",
-  "VENDIDA",
-  "ALQUILADA",
-  "PAUSADA",
-  "CANCELADA",
-]);
+// Enum schemas come straight from the model, so a new status/type only has to
+// be added in one place.
+export const propertyStatusSchema = z.enum(propertyStatusEnum.enumValues);
+export const propertyTypeSchema = z.enum(propertyTypeEnum.enumValues);
+export const operationTypeSchema = z.enum(operationTypeEnum.enumValues);
+export const currencySchema = z.enum(currencyEnum.enumValues);
 
-export const propertyTypeSchema = z.enum([
-  "Casa",
-  "Departamento",
-  "Terreno",
-  "Local",
-]);
+const tagSchema = z.string().trim().toLowerCase().min(1).max(40);
 
-export const operationTypeSchema = z.enum(["Venta", "Alquiler"]);
-export const currencySchema = z.enum(["ARS", "USD"]);
-
+// Only the SHAPE of the payload is checked here. Cross-field business rules
+// (a Terreno has no rooms, covered area <= total area...) live in the service.
 export const createPropertySchema = z.object({
-  title: z.string().min(3),
-  description: z.string().min(10),
+  title: z.string().trim().min(3),
+  description: z.string().trim().min(10),
   propertyType: propertyTypeSchema,
   operationType: operationTypeSchema,
   status: z.enum(["BORRADOR", "PUBLICADA"]).default("BORRADOR"),
@@ -33,21 +30,34 @@ export const createPropertySchema = z.object({
       message: "Price must be greater than 0",
     }),
   currency: currencySchema.default("USD"),
-  totalArea: z.coerce.number().positive().optional().nullable(),
-  coveredArea: z.coerce.number().positive().optional().nullable(),
+  totalArea: z.coerce.number().int().positive().optional().nullable(),
+  coveredArea: z.coerce.number().int().positive().optional().nullable(),
   rooms: z.coerce.number().int().positive().optional().nullable(),
   bedrooms: z.coerce.number().int().nonnegative().optional().nullable(),
   bathrooms: z.coerce.number().int().nonnegative().optional().nullable(),
   age: z.coerce.number().int().nonnegative().optional().nullable(),
-  address: z.string().min(3),
-  neighborhood: z.string().min(2),
-  tags: z.array(z.string()).optional().default([]),
+  address: z.string().trim().min(3),
+  neighborhood: z.string().trim().min(2),
+  tags: z.array(tagSchema).optional().default([]),
 });
 
-export const updatePropertySchema = createPropertySchema.partial().extend({
-  status: z.undefined(), // Disallow status updates through standard update
-});
+// `status` is not editable here (it has its own endpoint) and unknown keys are
+// rejected, so sending it gives a clear "Unrecognized key" error.
+export const updatePropertySchema = createPropertySchema
+  .omit({ status: true })
+  .partial()
+  .strict()
+  .refine((patch) => Object.keys(patch).length > 0, {
+    message: "At least one field is required",
+  });
 
 export const updatePropertyStatusSchema = z.object({
   status: propertyStatusSchema,
 });
+
+export const addImageSchema = z.object({
+  imageUrl: z.string().url(),
+});
+
+export type CreatePropertyInput = z.infer<typeof createPropertySchema>;
+export type UpdatePropertyInput = z.infer<typeof updatePropertySchema>;
