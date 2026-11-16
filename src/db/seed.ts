@@ -1,627 +1,786 @@
-import { db } from "./index";
+/**
+ * Demo data for local development.
+ *
+ *   bun run db:seed             seed an empty database
+ *   bun run db:seed -- --reset  WIPE every table first, then seed
+ *
+ * It is a script, not a migration: it talks to Drizzle directly (it needs to
+ * back-date rows, which the services deliberately don't allow) and creates the
+ * sellers through Better Auth so their passwords are hashed like in production.
+ */
+import { count, sql } from "drizzle-orm";
+import { db } from "@/db";
+import { auth } from "@/lib/auth";
 import {
+  activities,
   agencies,
+  comments,
   properties,
   propertyImages,
   propertyStateHistory,
-  comments,
-  visitRequests,
   reviews,
-  activities,
-} from "./schema";
-import { user, session, account } from "./auth-schema";
-import { auth } from "@/lib/auth";
+  user,
+  visitRequests,
+  type Currency,
+  type NewActivity,
+  type OperationType,
+  type PropertyStatus,
+  type PropertyType,
+  type VisitRequestStatus,
+} from "@/models";
 
-async function runSeed() {
-  console.log("Starting database seeding...");
+const DEMO_PASSWORD = "habitat123";
+const DAY = 24 * 60 * 60 * 1000;
+const daysAgo = (days: number) => new Date(Date.now() - days * DAY);
+const daysFromNow = (days: number) => new Date(Date.now() + days * DAY);
 
-  // 1. Clean existing records in dependency order
-  console.log("Cleaning old records...");
-  await db.delete(activities);
-  await db.delete(reviews);
-  await db.delete(visitRequests);
-  await db.delete(comments);
-  await db.delete(propertyStateHistory);
-  await db.delete(propertyImages);
-  await db.delete(properties);
-  await db.delete(agencies);
-  await db.delete(session);
-  await db.delete(account);
-  await db.delete(user);
+// --- sellers ---------------------------------------------------------------------
 
-  // 2. Create Agency 1 (Inmobiliaria del Sol)
-  console.log("Creating Agency 1 (Inmobiliaria del Sol)...");
-  const authUser1 = await auth.api.signUpEmail({
-    body: {
-      name: "Carlos Soler",
-      email: "vendedor@delsol.com",
-      password: "password123",
-    },
-  });
+const SELLERS = [
+  {
+    name: "Lucía Fernández",
+    email: "lucia@inmobiliariadelsol.com",
+    fantasyName: "Inmobiliaria del Sol",
+    description:
+      "Más de 15 años acompañando familias en la compra, venta y alquiler en Capital Federal y zona norte.",
+    phone: "011-5555-5555",
+    address: "Av. Santa Fe 3200, Palermo, CABA",
+  },
+  {
+    name: "Martín Gómez",
+    email: "martin@costapropiedades.com",
+    fantasyName: "Costa Propiedades",
+    description:
+      "Especialistas en la Costa Atlántica: Pinamar, Ostende, Valeria del Mar y Cariló.",
+    phone: "02254-48-1234",
+    address: "Av. Bunge 1050, Pinamar",
+  },
+  {
+    name: "Valentina Ruiz",
+    email: "valentina@urbanonorte.com",
+    fantasyName: "Urbano Norte",
+    description:
+      "Departamentos y locales comerciales en Belgrano, Núñez y Colegiales.",
+    phone: "011-4777-3030",
+    address: null,
+  },
+];
 
-  const [agency1] = await db
-    .insert(agencies)
-    .values({
-      userId: authUser1.user.id,
-      fantasyName: "Inmobiliaria del Sol",
-      description:
-        "Especialistas en propiedades residenciales y comerciales en Zona Norte y CABA. Más de 15 años de trayectoria conectando personas con su hogar ideal.",
-      phone: "+54 11 4788-9900",
-      email: "contacto@inmobiliariadelsol.com",
-      address: "Av. del Libertador 6250, Belgrano, CABA",
-      logoUrl:
-        "https://images.unsplash.com/photo-1560518883-ce09059eeffa?w=400&auto=format&fit=crop&q=80",
-    })
-    .returning();
+// --- properties ------------------------------------------------------------------
+// `history` is the lifecycle in chronological order: [status, days ago]. The
+// first entry is the creation, the last one must match `status`.
 
-  // 3. Create Agency 2 (Torres & Asociados)
-  console.log("🏢 Creating Agency 2 (Torres & Asociados Propiedades)...");
-  const authUser2 = await auth.api.signUpEmail({
-    body: {
-      name: "Florencia Torres",
-      email: "contacto@torrespropiedades.com",
-      password: "password123",
-    },
-  });
+type SeedProperty = {
+  seller: number;
+  title: string;
+  description: string;
+  propertyType: PropertyType;
+  operationType: OperationType;
+  status: PropertyStatus;
+  price: number;
+  currency: Currency;
+  totalArea: number;
+  coveredArea: number | null;
+  rooms: number | null;
+  bedrooms: number | null;
+  bathrooms: number | null;
+  age: number | null;
+  address: string;
+  neighborhood: string;
+  tags: string[];
+  history: [PropertyStatus, number][];
+};
 
-  const [agency2] = await db
-    .insert(agencies)
-    .values({
-      userId: authUser2.user.id,
-      fantasyName: "Torres & Asociados Propiedades",
-      description:
-        "Boutique inmobiliaria con enfoque personalizado. Tasaciones profesionales y asesoramiento legal y financiero integral.",
-      phone: "+54 11 4822-1133",
-      email: "info@torrespropiedades.com",
-      address: "Av. Santa Fe 3120, Palermo, CABA",
-      logoUrl:
-        "https://images.unsplash.com/photo-1570129477492-45c003edd2be?w=400&auto=format&fit=crop&q=80",
-    })
-    .returning();
+const PROPERTIES: SeedProperty[] = [
+  {
+    seller: 0,
+    title: "Departamento 2 ambientes con vista",
+    description:
+      "Luminoso departamento de 2 ambientes con balcón corrido y vista abierta. Cocina separada, placard completo y muy buena ubicación cerca del subte.",
+    propertyType: "Departamento",
+    operationType: "Alquiler",
+    status: "PUBLICADA",
+    price: 400,
+    currency: "USD",
+    totalArea: 48,
+    coveredArea: 45,
+    rooms: 2,
+    bedrooms: 1,
+    bathrooms: 1,
+    age: 12,
+    address: "Av. Santa Fe 3300",
+    neighborhood: "Palermo",
+    tags: ["balcón", "apto profesional", "admite mascotas"],
+    history: [
+      ["BORRADOR", 40],
+      ["PUBLICADA", 38],
+    ],
+  },
+  {
+    seller: 0,
+    title: "Departamento 3 ambientes a estrenar",
+    description:
+      "Departamento a estrenar de 3 ambientes con amenities: SUM, parrilla y pileta. Cochera cubierta opcional.",
+    propertyType: "Departamento",
+    operationType: "Venta",
+    status: "PUBLICADA",
+    price: 185000,
+    currency: "USD",
+    totalArea: 72,
+    coveredArea: 66,
+    rooms: 3,
+    bedrooms: 2,
+    bathrooms: 2,
+    age: 0,
+    address: "Av. Cabildo 2100",
+    neighborhood: "Belgrano",
+    tags: ["pileta", "cochera", "balcón"],
+    history: [
+      ["BORRADOR", 25],
+      ["PUBLICADA", 22],
+    ],
+  },
+  {
+    seller: 0,
+    title: "Casa con jardín y pileta",
+    description:
+      "Casa de 4 ambientes en lote propio con jardín, quincho y pileta. Dos cocheras. Ideal familia numerosa.",
+    propertyType: "Casa",
+    operationType: "Venta",
+    status: "RESERVADA",
+    price: 320000,
+    currency: "USD",
+    totalArea: 380,
+    coveredArea: 210,
+    rooms: 5,
+    bedrooms: 4,
+    bathrooms: 3,
+    age: 8,
+    address: "Echeverría 2450",
+    neighborhood: "Belgrano",
+    tags: ["pileta", "cochera", "quincho", "jardín"],
+    history: [
+      ["BORRADOR", 90],
+      ["PUBLICADA", 88],
+      ["RESERVADA", 6],
+    ],
+  },
+  {
+    seller: 0,
+    title: "Monoambiente luminoso en Recoleta",
+    description:
+      "Monoambiente amplio con cocina integrada, a metros de Plaza Francia. Ideal inversión o primera vivienda.",
+    propertyType: "Departamento",
+    operationType: "Venta",
+    status: "VENDIDA",
+    price: 78000,
+    currency: "USD",
+    totalArea: 34,
+    coveredArea: 32,
+    rooms: 1,
+    bedrooms: 0,
+    bathrooms: 1,
+    age: 30,
+    address: "Junín 1500",
+    neighborhood: "Recoleta",
+    tags: ["apto profesional"],
+    history: [
+      ["BORRADOR", 150],
+      ["PUBLICADA", 148],
+      ["RESERVADA", 120],
+      ["VENDIDA", 105],
+    ],
+  },
+  {
+    seller: 0,
+    title: "Departamento 2 ambientes en Caballito",
+    description:
+      "Departamento al frente con balcón, muy luminoso, en edificio con seguridad 24hs y laundry.",
+    propertyType: "Departamento",
+    operationType: "Alquiler",
+    status: "ALQUILADA",
+    price: 450000,
+    currency: "ARS",
+    totalArea: 52,
+    coveredArea: 50,
+    rooms: 2,
+    bedrooms: 1,
+    bathrooms: 1,
+    age: 15,
+    address: "Av. Rivadavia 5100",
+    neighborhood: "Caballito",
+    tags: ["balcón", "admite mascotas"],
+    history: [
+      ["BORRADOR", 75],
+      ["PUBLICADA", 74],
+      ["RESERVADA", 60],
+      ["ALQUILADA", 55],
+    ],
+  },
+  {
+    seller: 0,
+    title: "Terreno en esquina",
+    description:
+      "Terreno en esquina de 300 m² con todos los servicios, a una cuadra de la avenida principal. Apto construcción en altura.",
+    propertyType: "Terreno",
+    operationType: "Venta",
+    status: "PAUSADA",
+    price: 95000,
+    currency: "USD",
+    totalArea: 300,
+    coveredArea: null,
+    rooms: null,
+    bedrooms: null,
+    bathrooms: null,
+    age: null,
+    address: "Zapiola 1800",
+    neighborhood: "Colegiales",
+    tags: [],
+    history: [
+      ["BORRADOR", 60],
+      ["PUBLICADA", 58],
+      ["PAUSADA", 15],
+    ],
+  },
+  {
+    seller: 0,
+    title: "Casa en construcción (borrador)",
+    description:
+      "Casa en construcción de 3 ambientes, entrega estimada en seis meses. Aún falta cargar fotos y precio final.",
+    propertyType: "Casa",
+    operationType: "Venta",
+    status: "BORRADOR",
+    price: 210000,
+    currency: "USD",
+    totalArea: 250,
+    coveredArea: 140,
+    rooms: 4,
+    bedrooms: 3,
+    bathrooms: 2,
+    age: 0,
+    address: "Virrey del Pino 3300",
+    neighborhood: "Belgrano",
+    tags: ["jardín"],
+    history: [["BORRADOR", 2]],
+  },
+  {
+    seller: 1,
+    title: "Casa con pileta a 3 cuadras del mar",
+    description:
+      "Hermosa casa de 4 ambientes con pileta, parrilla y deck. Totalmente amoblada. A tres cuadras de la playa.",
+    propertyType: "Casa",
+    operationType: "Venta",
+    status: "PUBLICADA",
+    price: 120000,
+    currency: "USD",
+    totalArea: 600,
+    coveredArea: 180,
+    rooms: 4,
+    bedrooms: 3,
+    bathrooms: 2,
+    age: 10,
+    address: "Calle de las Gaviotas 450",
+    neighborhood: "Ostende",
+    tags: ["pileta", "parrilla", "cochera", "admite mascotas"],
+    history: [
+      ["BORRADOR", 50],
+      ["PUBLICADA", 48],
+    ],
+  },
+  {
+    seller: 1,
+    title: "Casa de veraneo para alquilar",
+    description:
+      "Casa para 8 personas, 4 dormitorios, jardín y parrilla. Alquiler por temporada con opción anual.",
+    propertyType: "Casa",
+    operationType: "Alquiler",
+    status: "PUBLICADA",
+    price: 1800,
+    currency: "USD",
+    totalArea: 500,
+    coveredArea: 160,
+    rooms: 5,
+    bedrooms: 4,
+    bathrooms: 2,
+    age: 6,
+    address: "Av. del Plata 900",
+    neighborhood: "Valeria del Mar",
+    tags: ["parrilla", "jardín", "admite mascotas"],
+    history: [
+      ["BORRADOR", 35],
+      ["PUBLICADA", 34],
+    ],
+  },
+  {
+    seller: 1,
+    title: "Local comercial sobre Av. Bunge",
+    description:
+      "Local de 60 m² con vidriera sobre la avenida principal, baño y depósito. Excelente zona comercial en temporada.",
+    propertyType: "Local",
+    operationType: "Alquiler",
+    status: "PUBLICADA",
+    price: 950000,
+    currency: "ARS",
+    totalArea: 60,
+    coveredArea: 60,
+    rooms: 2,
+    bedrooms: null,
+    bathrooms: 1,
+    age: 20,
+    address: "Av. Bunge 1180",
+    neighborhood: "Pinamar",
+    tags: ["apto profesional"],
+    history: [
+      ["BORRADOR", 20],
+      ["PUBLICADA", 19],
+    ],
+  },
+  {
+    seller: 1,
+    title: "Lote a 200 metros del mar",
+    description:
+      "Lote de 450 m² en zona residencial tranquila, con luz y agua. Posibilidad de financiación.",
+    propertyType: "Terreno",
+    operationType: "Venta",
+    status: "VENDIDA",
+    price: 60000,
+    currency: "USD",
+    totalArea: 450,
+    coveredArea: null,
+    rooms: null,
+    bedrooms: null,
+    bathrooms: null,
+    age: null,
+    address: "Calle 12 y 3",
+    neighborhood: "Cariló",
+    tags: [],
+    history: [
+      ["BORRADOR", 130],
+      ["PUBLICADA", 128],
+      ["VENDIDA", 70],
+    ],
+  },
+  {
+    seller: 1,
+    title: "Departamento frente al mar",
+    description:
+      "Departamento de 2 ambientes con vista directa al mar, balcón y cochera. Edificio con pileta climatizada.",
+    propertyType: "Departamento",
+    operationType: "Venta",
+    status: "CANCELADA",
+    price: 140000,
+    currency: "USD",
+    totalArea: 58,
+    coveredArea: 54,
+    rooms: 2,
+    bedrooms: 1,
+    bathrooms: 1,
+    age: 5,
+    address: "Av. Libertador 300",
+    neighborhood: "Pinamar",
+    tags: ["pileta", "cochera", "balcón"],
+    history: [
+      ["BORRADOR", 80],
+      ["PUBLICADA", 79],
+      ["CANCELADA", 30],
+    ],
+  },
+  {
+    seller: 2,
+    title: "Local en esquina sobre Cabildo",
+    description:
+      "Local de 90 m² con doble frente en esquina, entrepiso y baño. Alto tránsito peatonal.",
+    propertyType: "Local",
+    operationType: "Alquiler",
+    status: "PUBLICADA",
+    price: 1200,
+    currency: "USD",
+    totalArea: 95,
+    coveredArea: 90,
+    rooms: 3,
+    bedrooms: null,
+    bathrooms: 1,
+    age: 25,
+    address: "Av. Cabildo 1900",
+    neighborhood: "Belgrano",
+    tags: ["apto profesional"],
+    history: [
+      ["BORRADOR", 28],
+      ["PUBLICADA", 27],
+    ],
+  },
+  {
+    seller: 2,
+    title: "Departamento 4 ambientes con cochera",
+    description:
+      "Amplio departamento de 4 ambientes con dependencia de servicio, balcón terraza y dos cocheras.",
+    propertyType: "Departamento",
+    operationType: "Venta",
+    status: "PUBLICADA",
+    price: 260000,
+    currency: "USD",
+    totalArea: 130,
+    coveredArea: 118,
+    rooms: 4,
+    bedrooms: 3,
+    bathrooms: 2,
+    age: 18,
+    address: "Av. del Libertador 7400",
+    neighborhood: "Núñez",
+    tags: ["cochera", "balcón", "pileta"],
+    history: [
+      ["BORRADOR", 45],
+      ["PUBLICADA", 44],
+    ],
+  },
+];
 
-  // 4. Create Properties
-  console.log("Seeding properties...");
+// --- helpers ---------------------------------------------------------------------
 
-  const now = new Date();
-  const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
-  const fortyFiveDaysAgo = new Date(now.getTime() - 45 * 24 * 60 * 60 * 1000);
-  const sixtyDaysAgo = new Date(now.getTime() - 60 * 24 * 60 * 60 * 1000);
-  const ninetyDaysAgo = new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000);
+const slug = (text: string) =>
+  text
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/(^-|-$)/g, "");
 
-  // Property 1 - Palermo Depto
-  const [prop1] = await db
-    .insert(properties)
-    .values({
-      agencyId: agency1.id,
-      title: "Semipiso 3 ambientes con balcón aterrazado y amenities",
-      description:
-        "Hermoso departamento al frente con orientación este. Gran luminosidad, cocina integrada con isla, suite con vestidor, cochera fija cubierta y baulera. Edificio con piscina climatizada, gimnasio y SUM.",
-      propertyType: "Departamento",
-      operationType: "Venta",
-      status: "PUBLICADA",
-      price: "165000.00",
-      currency: "USD",
-      totalArea: 78,
-      coveredArea: 68,
-      rooms: 3,
-      bedrooms: 2,
-      bathrooms: 2,
-      age: 4,
-      address: "Gorriti 4800",
-      neighborhood: "Palermo",
-      tags: [
-        "pileta",
-        "cochera",
-        "balcon",
-        "sum",
-        "gimnasio",
-        "seguridad 24hs",
-      ],
-      createdAt: thirtyDaysAgo,
-    })
-    .returning();
-
-  // Property 2 - Nordelta Casa
-  const [prop2] = await db
-    .insert(properties)
-    .values({
-      agencyId: agency1.id,
-      title: "Espectacular casa moderna al lago con pileta y muelle",
-      description:
-        "Diseño vanguardista de doble altura. Living comedor apaisado con vistas al lago principal. Galería con parrilla cerrada, jardín parquizado con riego automático y muelle propio.",
-      propertyType: "Casa",
-      operationType: "Venta",
-      status: "PUBLICADA",
-      price: "420000.00",
-      currency: "USD",
-      totalArea: 650,
-      coveredArea: 320,
-      rooms: 5,
-      bedrooms: 4,
-      bathrooms: 4,
-      age: 2,
-      address: "Los Alisos 142",
-      neighborhood: "Nordelta",
-      tags: [
-        "pileta",
-        "cochera",
-        "parrilla",
-        "seguridad 24hs",
-        "admite mascotas",
-        "jardin",
-      ],
-      createdAt: fortyFiveDaysAgo,
-    })
-    .returning();
-
-  // Property 3 - Belgrano Alquiler
-  const [prop3] = await db
-    .insert(properties)
-    .values({
-      agencyId: agency1.id,
-      title: "Depto 2 ambientes amoblado con vista abierta",
-      description:
-        "Excelente departamento totalmente equipado listo para ingresar. Living comedor con salida a balcón, cocina independiente, dormitorio con placard completo y baño completo.",
-      propertyType: "Departamento",
-      operationType: "Alquiler",
-      status: "PUBLICADA",
-      price: "650.00",
-      currency: "USD",
-      totalArea: 48,
-      coveredArea: 44,
-      rooms: 2,
-      bedrooms: 1,
-      bathrooms: 1,
-      age: 6,
-      address: "Av. Cabildo 2150",
-      neighborhood: "Belgrano",
-      tags: ["balcon", "seguridad 24hs", "apto profesional"],
-      createdAt: sixtyDaysAgo,
-    })
-    .returning();
-
-  // Property 4 - Local Recoleta
-  const [prop4] = await db
-    .insert(properties)
-    .values({
-      agencyId: agency1.id,
-      title: "Local comercial en esquina de alto tránsito peatonal",
-      description:
-        "Excelente local con doble vidriera sobre avenida. Salón principal sin columnas, depósito en subsuelo y dos baños. Apto para rubro gastronómico, indumentaria o farmacia.",
-      propertyType: "Local",
-      operationType: "Alquiler",
-      status: "PUBLICADA",
-      price: "1250000.00",
-      currency: "ARS",
-      totalArea: 110,
-      coveredArea: 110,
-      rooms: 2,
-      bathrooms: 2,
-      age: 12,
-      address: "Av. Las Heras 2300",
-      neighborhood: "Recoleta",
-      tags: ["apto profesional", "esquina", "vidriera"],
-      createdAt: thirtyDaysAgo,
-    })
-    .returning();
-
-  // Property 5 - Pilar Terreno
-  const [prop5] = await db
-    .insert(properties)
-    .values({
-      agencyId: agency1.id,
-      title: "Lote perimetral arbolado en Barrio Cerrado",
-      description:
-        "Excelente lote listo para construir. Orientación noroeste con añosa arboleda. Todos los servicios subterráneos (luz, gas natural, fibra óptica y cloacas).",
-      propertyType: "Terreno",
-      operationType: "Venta",
-      status: "PUBLICADA",
-      price: "58000.00",
-      currency: "USD",
-      totalArea: 800,
-      address: "Km 50 Panamericana",
-      neighborhood: "Pilar",
-      tags: ["seguridad 24hs", "pileta", "club house"],
-      createdAt: sixtyDaysAgo,
-    })
-    .returning();
-
-  // Property 6 - Villa Urquiza (Reservada)
-  const [prop6] = await db
-    .insert(properties)
-    .values({
-      agencyId: agency1.id,
-      title: "Moderno monoambiente divisible con balcón",
-      description:
-        "Unidad muy luminosa en piso alto. Cocina equipada con bajo mesada y alacena, placard con interiores y baño completo con bañera.",
-      propertyType: "Departamento",
-      operationType: "Alquiler",
-      status: "RESERVADA",
-      price: "420000.00",
-      currency: "ARS",
-      totalArea: 38,
-      coveredArea: 34,
-      rooms: 1,
-      bedrooms: 1,
-      bathrooms: 1,
-      age: 1,
-      address: "Triunvirato 4100",
-      neighborhood: "Villa Urquiza",
-      tags: ["balcon", "sum", "laundry"],
-      createdAt: thirtyDaysAgo,
-    })
-    .returning();
-
-  // Property 7 - San Isidro Casa (Vendida con 45 días de tiempo de mercado)
-  const [prop7] = await db
-    .insert(properties)
-    .values({
-      agencyId: agency1.id,
-      title: "Casa de estilo colonial con jardín y pileta en San Isidro",
-      description:
-        "Impecable propiedad desarrollada en dos plantas. Living con hogar a leña, cocina comedor diario, 3 dormitorios en planta alta y quincho independiente.",
-      propertyType: "Casa",
-      operationType: "Venta",
-      status: "VENDIDA",
-      price: "340000.00",
-      currency: "USD",
-      totalArea: 420,
-      coveredArea: 240,
-      rooms: 5,
-      bedrooms: 3,
-      bathrooms: 3,
-      age: 18,
-      address: "Diego Palma 950",
-      neighborhood: "San Isidro",
-      tags: ["pileta", "jardin", "parrilla", "cochera"],
-      createdAt: ninetyDaysAgo,
-      updatedAt: fortyFiveDaysAgo,
-    })
-    .returning();
-
-  // Property 8 - Agency 2: Puerto Madero
-  const [prop8] = await db
-    .insert(properties)
-    .values({
-      agencyId: agency2.id,
-      title: "Piso de lujo con vista al dique y cochera doble",
-      description:
-        "Semipiso premium en torre de categoría. Palier privado, master suite con hidromasaje, balcón terraza, dependencia de servicio. Amenities de primer nivel.",
-      propertyType: "Departamento",
-      operationType: "Alquiler",
-      status: "PUBLICADA",
-      price: "2400.00",
-      currency: "USD",
-      totalArea: 160,
-      coveredArea: 145,
-      rooms: 4,
-      bedrooms: 3,
-      bathrooms: 3,
-      age: 5,
-      address: "Juana Manso 1600",
-      neighborhood: "Puerto Madero",
-      tags: [
-        "pileta",
-        "cochera",
-        "balcon",
-        "gimnasio",
-        "seguridad 24hs",
-        "sum",
-      ],
-      createdAt: thirtyDaysAgo,
-    })
-    .returning();
-
-  // 5. Insert Images for Properties
-  console.log("Seeding property images...");
-
-  await db.insert(propertyImages).values([
-    // Images for Prop 1 (Palermo)
-    {
-      propertyId: prop1.id,
-      imageUrl:
-        "https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?w=1000&auto=format&fit=crop&q=80",
-      order: 0,
-      isCover: true,
-    },
-    {
-      propertyId: prop1.id,
-      imageUrl:
-        "https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=1000&auto=format&fit=crop&q=80",
-      order: 1,
-      isCover: false,
-    },
-    {
-      propertyId: prop1.id,
-      imageUrl:
-        "https://images.unsplash.com/photo-1484154218962-a197022b5858?w=1000&auto=format&fit=crop&q=80",
-      order: 2,
-      isCover: false,
-    },
-
-    // Images for Prop 2 (Nordelta)
-    {
-      propertyId: prop2.id,
-      imageUrl:
-        "https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=1000&auto=format&fit=crop&q=80",
-      order: 0,
-      isCover: true,
-    },
-    {
-      propertyId: prop2.id,
-      imageUrl:
-        "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=1000&auto=format&fit=crop&q=80",
-      order: 1,
-      isCover: false,
-    },
-
-    // Images for Prop 3 (Belgrano)
-    {
-      propertyId: prop3.id,
-      imageUrl:
-        "https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=1000&auto=format&fit=crop&q=80",
-      order: 0,
-      isCover: true,
-    },
-
-    // Images for Prop 4 (Local Recoleta)
-    {
-      propertyId: prop4.id,
-      imageUrl:
-        "https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=1000&auto=format&fit=crop&q=80",
-      order: 0,
-      isCover: true,
-    },
-
-    // Images for Prop 5 (Pilar Terreno)
-    {
-      propertyId: prop5.id,
-      imageUrl:
-        "https://images.unsplash.com/photo-1500382017468-9049fed747ef?w=1000&auto=format&fit=crop&q=80",
-      order: 0,
-      isCover: true,
-    },
-
-    // Images for Prop 6 (Villa Urquiza)
-    {
-      propertyId: prop6.id,
-      imageUrl:
-        "https://images.unsplash.com/photo-1493809842364-78817add7ffb?w=1000&auto=format&fit=crop&q=80",
-      order: 0,
-      isCover: true,
-    },
-
-    // Images for Prop 7 (San Isidro)
-    {
-      propertyId: prop7.id,
-      imageUrl:
-        "https://images.unsplash.com/photo-1600585154526-990dced4db0d?w=1000&auto=format&fit=crop&q=80",
-      order: 0,
-      isCover: true,
-    },
-
-    // Images for Prop 8 (Puerto Madero)
-    {
-      propertyId: prop8.id,
-      imageUrl:
-        "https://images.unsplash.com/photo-1512917774080-9991f1c4c750?w=1000&auto=format&fit=crop&q=80",
-      order: 0,
-      isCover: true,
-    },
-  ]);
-
-  // 6. State History Records
-  console.log("Seeding property state history...");
-
-  await db.insert(propertyStateHistory).values([
-    // History for Prop 6 (Reservada)
-    {
-      propertyId: prop6.id,
-      previousState: "BORRADOR",
-      newState: "PUBLICADA",
-      createdAt: thirtyDaysAgo,
-    },
-    {
-      propertyId: prop6.id,
-      previousState: "PUBLICADA",
-      newState: "RESERVADA",
-      createdAt: new Date(now.getTime() - 3 * 24 * 60 * 60 * 1000),
-    },
-
-    // History for Prop 7 (Vendida: 45 days on market)
-    {
-      propertyId: prop7.id,
-      previousState: "BORRADOR",
-      newState: "PUBLICADA",
-      createdAt: ninetyDaysAgo,
-    },
-    {
-      propertyId: prop7.id,
-      previousState: "PUBLICADA",
-      newState: "RESERVADA",
-      createdAt: sixtyDaysAgo,
-    },
-    {
-      propertyId: prop7.id,
-      previousState: "RESERVADA",
-      newState: "VENDIDA",
-      createdAt: fortyFiveDaysAgo,
-    },
-  ]);
-
-  // 7. Seed Comments & Seller Replies
-  console.log("Seeding comments and replies...");
-
-  await db.insert(comments).values([
-    {
-      propertyId: prop1.id,
-      authorName: "Martín Gómez",
-      content:
-        "¿Aceptan permuta por departamento de menor valor en Colegiales?",
-      sellerReply:
-        "Hola Martín, los propietarios evalúan permutas de hasta el 40% del valor. Si querés contactanos al teléfono de la inmobiliaria para coordinar.",
-      createdAt: new Date(now.getTime() - 5 * 24 * 60 * 60 * 1000),
-    },
-    {
-      propertyId: prop1.id,
-      authorName: "Lucía Fernández",
-      content: "¿Cuánto pagan de expensas actualmente y qué incluyen?",
-      sellerReply:
-        "Hola Lucía, las expensas del último mes fueron de $180.000 e incluyen Aysa, seguridad 24hs y mantenimiento de amenities.",
-      createdAt: new Date(now.getTime() - 2 * 24 * 60 * 60 * 1000),
-    },
-    {
-      propertyId: prop2.id,
-      authorName: "Esteban Rossi",
-      content: "¿El lote tiene salida a laguna navegable para kayaks?",
-      sellerReply:
-        "Sí Esteban, tiene muelle propio y acceso directo a la laguna central para embarcaciones sin motor.",
-      createdAt: new Date(now.getTime() - 1 * 24 * 60 * 60 * 1000),
-    },
-    {
-      propertyId: prop3.id,
-      authorName: "Camila Díaz",
-      content: "¿Se aceptan mascotas de tamaño mediano?",
-      sellerReply: null, // Unanswered inquiry
-      createdAt: new Date(now.getTime() - 3 * 60 * 60 * 1000), // 3 hours ago
-    },
-  ]);
-
-  // 8. Seed Visit Requests
-  console.log("Seeding visit requests...");
-
-  const futureDate1 = new Date(now.getTime() + 2 * 24 * 60 * 60 * 1000);
-  futureDate1.setHours(16, 0, 0, 0);
-
-  const futureDate2 = new Date(now.getTime() + 4 * 24 * 60 * 60 * 1000);
-  futureDate2.setHours(11, 30, 0, 0);
-
-  const futureDate3 = new Date(now.getTime() + 6 * 24 * 60 * 60 * 1000);
-  futureDate3.setHours(15, 0, 0, 0);
-
-  await db.insert(visitRequests).values([
-    {
-      propertyId: prop1.id,
-      requesterName: "Agustina Benítez",
-      requesterPhone: "+54 9 11 5566-7788",
-      proposedDate: futureDate1,
-      message:
-        "Buenas tardes, me gustaría coordinar para ver el departamento este fin de semana.",
-      status: "Confirmada",
-    },
-    {
-      propertyId: prop2.id,
-      requesterName: "Mariano Castro",
-      requesterPhone: "+54 9 11 4433-2211",
-      proposedDate: futureDate2,
-      message: "Hola, queremos ir en familia a conocer la casa y el barrio.",
-      status: "Pendiente",
-    },
-    {
-      propertyId: prop3.id,
-      requesterName: "Valeria Paz",
-      requesterPhone: "+54 9 11 8899-0011",
-      proposedDate: futureDate3,
-      message: "Trabajo cerca de Cabildo, me queda perfecto ese horario.",
-      status: "Pendiente",
-    },
-  ]);
-
-  // 9. Seed Reviews
-  console.log("Seeding agency reviews...");
-
-  await db.insert(reviews).values([
-    {
-      agencyId: agency1.id,
-      authorName: "Gonzalo Herrera",
-      content:
-        "Excelente atención por parte de Carlos. Nos asesoró en todo el proceso de compra de nuestro primer departamento y fue súper transparente.",
-      rating: 5,
-      createdAt: new Date(now.getTime() - 20 * 24 * 60 * 60 * 1000),
-    },
-    {
-      agencyId: agency1.id,
-      authorName: "Sofía Pereyra",
-      content:
-        "Muy profesionales y puntuales en las visitas. Respuestas rápidas por WhatsApp para coordinar los trámites.",
-      rating: 5,
-      createdAt: new Date(now.getTime() - 12 * 24 * 60 * 60 * 1000),
-    },
-    {
-      agencyId: agency1.id,
-      authorName: "Rodrigo Morales",
-      content:
-        "Buena experiencia en el alquiler de un local. Todo según lo pactado en el contrato.",
-      rating: 4,
-      createdAt: new Date(now.getTime() - 4 * 24 * 60 * 60 * 1000),
-    },
-    {
-      agencyId: agency2.id,
-      authorName: "Daniela Varela",
-      content:
-        "Florencia tiene un trato impecable y un catálogo de propiedades de primera categoría en Puerto Madero y Recoleta.",
-      rating: 5,
-      createdAt: new Date(now.getTime() - 8 * 24 * 60 * 60 * 1000),
-    },
-  ]);
-
-  // 10. Seed Activities
-  console.log("Seeding agency activities...");
-
-  await db.insert(activities).values([
-    {
-      agencyId: agency1.id,
-      type: "new_comment",
-      content:
-        'Nueva consulta de Camila Díaz en "Depto 2 ambientes amoblado con vista abierta"',
-      isRead: false,
-      createdAt: new Date(now.getTime() - 3 * 60 * 60 * 1000),
-    },
-    {
-      agencyId: agency1.id,
-      type: "new_visit",
-      content:
-        'Nueva solicitud de visita de Mariano Castro para "Espectacular casa moderna al lago con pileta y muelle"',
-      isRead: false,
-      createdAt: new Date(now.getTime() - 5 * 60 * 60 * 1000),
-    },
-    {
-      agencyId: agency1.id,
-      type: "new_review",
-      content:
-        'Nueva reseña de Rodrigo Morales (4 estrellas): "Buena experiencia en el alquiler..."',
-      isRead: true,
-      createdAt: new Date(now.getTime() - 4 * 24 * 60 * 60 * 1000),
-    },
-    {
-      agencyId: agency1.id,
-      type: "property_state_change",
-      content:
-        'La propiedad "Moderno monoambiente divisible con balcón" cambió de estado a RESERVADA',
-      isRead: true,
-      createdAt: new Date(now.getTime() - 3 * 24 * 60 * 60 * 1000),
-    },
-  ]);
-
-  console.log("Database seeding completed successfully!");
-  console.log("");
-  console.log("Demo Credentials:");
-  console.log("-----------------------------------------");
-  console.log("Agency 1: Inmobiliaria del Sol");
-  console.log("  Email:    vendedor@delsol.com");
-  console.log("  Password: password123");
-  console.log("");
-  console.log("Agency 2: Torres & Asociados Propiedades");
-  console.log("  Email:    contacto@torrespropiedades.com");
-  console.log("  Password: password123");
-  console.log("-----------------------------------------");
+async function wipe() {
+  await db.execute(sql`
+    TRUNCATE TABLE activities, reviews, visit_requests, comments,
+      property_state_history, property_images, properties, agencies,
+      session, account, verification, "user"
+    RESTART IDENTITY CASCADE
+  `);
+  console.log("Existing data wiped (--reset).");
 }
 
-runSeed()
-  .catch((err) => {
-    console.error("Seeding failed:", err);
+async function createSellers() {
+  const created = [];
+  for (const seller of SELLERS) {
+    const { user } = await auth.api.signUpEmail({
+      body: {
+        email: seller.email,
+        password: DEMO_PASSWORD,
+        name: seller.name,
+      },
+    });
+
+    const [agency] = await db
+      .insert(agencies)
+      .values({
+        userId: user.id,
+        fantasyName: seller.fantasyName,
+        description: seller.description,
+        phone: seller.phone,
+        email: seller.email,
+        address: seller.address,
+        createdAt: daysAgo(200),
+      })
+      .returning();
+    created.push(agency);
+  }
+  return created;
+}
+
+async function createProperties(sellerAgencies: { id: string }[]) {
+  const created = [];
+
+  for (const spec of PROPERTIES) {
+    const agencyId = sellerAgencies[spec.seller].id;
+    const [property] = await db
+      .insert(properties)
+      .values({
+        agencyId,
+        title: spec.title,
+        description: spec.description,
+        propertyType: spec.propertyType,
+        operationType: spec.operationType,
+        status: spec.status,
+        price: String(spec.price),
+        currency: spec.currency,
+        totalArea: spec.totalArea,
+        coveredArea: spec.coveredArea,
+        rooms: spec.rooms,
+        bedrooms: spec.bedrooms,
+        bathrooms: spec.bathrooms,
+        age: spec.age,
+        address: spec.address,
+        neighborhood: spec.neighborhood,
+        tags: spec.tags,
+        createdAt: daysAgo(spec.history[0][1]),
+        updatedAt: daysAgo(spec.history[spec.history.length - 1][1]),
+      })
+      .returning();
+
+    // Audit log: one row per status the property went through.
+    await db.insert(propertyStateHistory).values(
+      spec.history.map(([newState, ago], index) => ({
+        propertyId: property.id,
+        previousState: index === 0 ? null : spec.history[index - 1][0],
+        newState,
+        createdAt: daysAgo(ago),
+      }))
+    );
+
+    // Gallery: first image is the cover.
+    const imageCount = spec.propertyType === "Terreno" ? 2 : 3;
+    await db.insert(propertyImages).values(
+      Array.from({ length: imageCount }, (_, index) => ({
+        propertyId: property.id,
+        imageUrl: `https://picsum.photos/seed/${slug(spec.title)}-${index + 1}/1200/800`,
+        order: index,
+        isCover: index === 0,
+      }))
+    );
+
+    created.push({ ...property, spec });
+  }
+
+  return created;
+}
+
+const byTitle = <T extends { title: string }>(list: T[], title: string): T => {
+  const found = list.find((item) => item.title === title);
+  if (!found) throw new Error(`Seed property not found: ${title}`);
+  return found;
+};
+
+async function createInteractions(
+  sellerAgencies: { id: string }[],
+  created: Awaited<ReturnType<typeof createProperties>>
+) {
+  const depto = byTitle(created, "Departamento 2 ambientes con vista");
+  const casaMar = byTitle(created, "Casa con pileta a 3 cuadras del mar");
+  const casaJardin = byTitle(created, "Casa con jardín y pileta");
+  const tresAmb = byTitle(created, "Departamento 3 ambientes a estrenar");
+  const local = byTitle(created, "Local en esquina sobre Cabildo");
+
+  // Comments (some already answered).
+  const seededComments = await db
+    .insert(comments)
+    .values([
+      {
+        propertyId: depto.id,
+        authorName: "Ana",
+        content: "¿Admite mascotas?",
+        sellerReply: "Sí, admite mascotas pequeñas.",
+        createdAt: daysAgo(9),
+      },
+      {
+        propertyId: depto.id,
+        authorName: "Pablo",
+        content: "¿Las expensas están incluidas en el precio?",
+        createdAt: daysAgo(1),
+      },
+      {
+        propertyId: casaMar.id,
+        authorName: "Luis",
+        content: "¿Tiene garage cubierto?",
+        sellerReply: "Sí, para dos autos.",
+        createdAt: daysAgo(12),
+      },
+      {
+        propertyId: casaMar.id,
+        authorName: "Carolina",
+        content: "¿Se puede visitar este fin de semana?",
+        createdAt: daysAgo(0.2),
+      },
+      {
+        propertyId: tresAmb.id,
+        authorName: "Jorge",
+        content: "¿Aceptan financiación o permuta?",
+        createdAt: daysAgo(3),
+      },
+      {
+        propertyId: local.id,
+        authorName: "Marina",
+        content: "¿Tiene habilitación gastronómica?",
+        createdAt: daysAgo(5),
+      },
+    ])
+    .returning();
+
+  // Visit requests, one per status.
+  const seededVisits = await db
+    .insert(visitRequests)
+    .values([
+      {
+        propertyId: depto.id,
+        requesterName: "María",
+        requesterPhone: "011-4444-4444",
+        proposedDate: daysFromNow(3),
+        message: "Puedo por la tarde, después de las 15hs.",
+        status: "Pendiente" as VisitRequestStatus,
+        createdAt: daysAgo(1),
+      },
+      {
+        propertyId: casaMar.id,
+        requesterName: "Pedro",
+        requesterPhone: "011-3333-3333",
+        proposedDate: daysFromNow(5),
+        status: "Confirmada" as VisitRequestStatus,
+        createdAt: daysAgo(4),
+      },
+      {
+        propertyId: casaJardin.id,
+        requesterName: "Sofía",
+        requesterPhone: "011-6666-1212",
+        proposedDate: daysAgo(10),
+        status: "Realizada" as VisitRequestStatus,
+        createdAt: daysAgo(20),
+      },
+      {
+        propertyId: tresAmb.id,
+        requesterName: "Diego",
+        requesterPhone: "011-5000-9999",
+        proposedDate: daysFromNow(2),
+        message: "Somos dos personas.",
+        status: "Rechazada" as VisitRequestStatus,
+        createdAt: daysAgo(6),
+      },
+      {
+        propertyId: local.id,
+        requesterName: "Florencia",
+        requesterPhone: "011-7000-8000",
+        proposedDate: daysFromNow(7),
+        status: "Cancelada" as VisitRequestStatus,
+        createdAt: daysAgo(8),
+      },
+    ])
+    .returning();
+
+  // Reviews.
+  const reviewRows = [
+    [0, "Juan", "Muy buena atención, todo claro desde el primer día.", 5, 30],
+    [0, "Camila", "Rápidos para responder y muy transparentes.", 5, 18],
+    [
+      0,
+      "Roberto",
+      "Buena inmobiliaria, aunque tardaron en las escrituras.",
+      4,
+      9,
+    ],
+    [0, "Elena", "Me asesoraron muy bien en el alquiler.", 5, 3],
+    [1, "Gustavo", "Excelente conocimiento de la zona.", 5, 25],
+    [1, "Natalia", "Nos mostraron varias casas sin presionar.", 4, 14],
+    [1, "Hernán", "La casa no era exactamente como en las fotos.", 2, 6],
+    [2, "Lorena", "Muy profesionales con el local comercial.", 5, 11],
+    [2, "Ricardo", "Atención correcta, nada para destacar.", 3, 4],
+  ] as const;
+
+  const seededReviews = await db
+    .insert(reviews)
+    .values(
+      reviewRows.map(([seller, authorName, content, rating, ago]) => ({
+        agencyId: sellerAgencies[seller].id,
+        authorName,
+        content,
+        rating,
+        createdAt: daysAgo(ago),
+      }))
+    )
+    .returning();
+
+  // Activity feed: one notification per interaction above, plus the status
+  // changes. Anything older than a week is already read.
+  const feed: NewActivity[] = [];
+  const agencyOf = (propertyId: string) =>
+    created.find((property) => property.id === propertyId)!.agencyId;
+  const titleOf = (propertyId: string) =>
+    created.find((property) => property.id === propertyId)!.title;
+  const isRead = (date: Date) => Date.now() - date.getTime() > 7 * DAY;
+
+  for (const comment of seededComments) {
+    feed.push({
+      agencyId: agencyOf(comment.propertyId),
+      type: "new_comment",
+      content: `${comment.authorName} hizo una consulta en "${titleOf(comment.propertyId)}".`,
+      isRead: isRead(comment.createdAt),
+      createdAt: comment.createdAt,
+    });
+  }
+  for (const visit of seededVisits) {
+    feed.push({
+      agencyId: agencyOf(visit.propertyId),
+      type: "new_visit",
+      content: `${visit.requesterName} solicitó una visita a "${titleOf(visit.propertyId)}".`,
+      isRead: isRead(visit.createdAt),
+      createdAt: visit.createdAt,
+    });
+  }
+  for (const review of seededReviews) {
+    feed.push({
+      agencyId: review.agencyId,
+      type: "new_review",
+      content: `${review.authorName} dejó una reseña de ${review.rating} ${
+        review.rating === 1 ? "estrella" : "estrellas"
+      }.`,
+      isRead: isRead(review.createdAt),
+      createdAt: review.createdAt,
+    });
+  }
+  for (const property of created) {
+    const { history } = property.spec;
+    if (history.length < 2) continue;
+    const [newState, ago] = history[history.length - 1];
+    feed.push({
+      agencyId: property.agencyId,
+      type: "property_state_change",
+      content: `La propiedad "${property.title}" cambió su estado a ${newState}.`,
+      isRead: isRead(daysAgo(ago)),
+      createdAt: daysAgo(ago),
+    });
+  }
+
+  await db.insert(activities).values(feed);
+
+  return {
+    comments: seededComments.length,
+    visits: seededVisits.length,
+    reviews: seededReviews.length,
+    activities: feed.length,
+  };
+}
+
+async function main() {
+  if (process.argv.includes("--reset")) {
+    await wipe();
+  }
+
+  // Users count too: a seed that failed halfway can leave users without agency.
+  const [{ agencyCount }] = await db
+    .select({ agencyCount: count() })
+    .from(agencies);
+  const [{ userCount }] = await db.select({ userCount: count() }).from(user);
+  if (agencyCount + userCount > 0) {
+    console.log(
+      "The database already has data. Run `bun run db:seed -- --reset` to wipe it and seed again."
+    );
+    return;
+  }
+
+  const sellerAgencies = await createSellers();
+  const createdProperties = await createProperties(sellerAgencies);
+  const totals = await createInteractions(sellerAgencies, createdProperties);
+
+  console.log(`
+Seed complete:
+  agencies    ${sellerAgencies.length}
+  properties  ${createdProperties.length}
+  comments    ${totals.comments}
+  visits      ${totals.visits}
+  reviews     ${totals.reviews}
+  activities  ${totals.activities}
+
+Demo logins (password for all: ${DEMO_PASSWORD}):
+${SELLERS.map((seller) => `  ${seller.email}  (${seller.fantasyName})`).join("\n")}
+`);
+}
+
+main()
+  .then(() => process.exit(0))
+  .catch((error) => {
+    console.error("Seed failed:", error);
     process.exit(1);
-  })
-  .finally(() => {
-    process.exit(0);
   });

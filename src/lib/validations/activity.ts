@@ -1,12 +1,10 @@
 import { z } from "zod";
+import { paginationQuerySchema } from "./common";
 
-export const activityFilterSchema = z.object({
-  unreadOnly: z
+// GET /api/agencies/me/activities?unread=true
+export const activitiesQuerySchema = paginationQuerySchema.extend({
+  unread: z
     .enum(["true", "false"])
-    .optional()
-    .transform((val) => val === "true"),
-  limit: z.coerce.number().int().positive().max(100).default(50),
-  offset: z.coerce.number().int().min(0).default(0),
+    .default("false")
+    .transform((value) => value === "true"),
 });
-
-export type ActivityFilterInput = z.infer<typeof activityFilterSchema>;

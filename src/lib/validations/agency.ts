@@ -1,23 +1,21 @@
 import { z } from "zod";
 
-export const updateAgencySchema = z.object({
-  fantasyName: z
-    .string()
-    .min(2, "El nombre de fantasía debe tener al menos 2 caracteres")
-    .optional(),
-  description: z.string().optional(),
-  phone: z
-    .string()
-    .min(6, "El teléfono de contacto debe tener al menos 6 caracteres")
-    .optional(),
-  email: z.string().email("Formato de email inválido").optional(),
-  address: z.string().nullable().optional(),
-  logoUrl: z
-    .string()
-    .url("URL de logo inválida")
-    .nullable()
-    .optional()
-    .or(z.literal("")),
-});
+// PATCH /api/agencies/me. The fantasy name is deliberately not editable here
+// (it is unique platform-wide); `.strict()` makes sending it a clear error.
+export const updateAgencySchema = z
+  .object({
+    description: z.string().trim().min(1, "La descripción es requerida"),
+    logoUrl: z.string().url("URL de logo inválida").nullable(),
+    phone: z
+      .string()
+      .trim()
+      .min(6, "El teléfono de contacto debe tener al menos 6 caracteres"),
+    address: z.string().trim().min(1).nullable(),
+  })
+  .partial()
+  .strict()
+  .refine((patch) => Object.keys(patch).length > 0, {
+    message: "At least one field is required",
+  });
 
 export type UpdateAgencyInput = z.infer<typeof updateAgencySchema>;

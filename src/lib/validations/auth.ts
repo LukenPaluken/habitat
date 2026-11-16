@@ -3,7 +3,8 @@ import { z } from "zod";
 export const registerSellerSchema = z.object({
   name: z.string().min(2, "El nombre debe tener al menos 2 caracteres"),
   email: z.string().email("Formato de email inválido"),
-  password: z.string().min(6, "La contraseña debe tener al menos 6 caracteres"),
+  // Better Auth rejects anything shorter than 8, so say it here, with the field.
+  password: z.string().min(8, "La contraseña debe tener al menos 8 caracteres"),
   fantasyName: z
     .string()
     .min(2, "El nombre de fantasía debe tener al menos 2 caracteres"),

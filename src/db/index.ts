@@ -1,12 +1,6 @@
 import { drizzle } from "drizzle-orm/postgres-js";
 import postgres from "postgres";
-import * as schema from "./schema";
-import * as authSchema from "./auth-schema";
-
-const fullSchema = {
-  ...schema,
-  ...authSchema,
-};
+import * as schema from "../models";
 
 const connectionString =
   process.env.DATABASE_URL ||
@@ -27,6 +21,7 @@ if (process.env.NODE_ENV !== "production") {
   globalForDb.conn = conn;
 }
 
-export const db = drizzle(conn, { schema: fullSchema });
+export const db = drizzle(conn, { schema });
 export type Database = typeof db;
-export { fullSchema as schema };
+export type Transaction = Parameters<Parameters<Database["transaction"]>[0]>[0];
+export { schema };

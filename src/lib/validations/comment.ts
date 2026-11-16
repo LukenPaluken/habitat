@@ -1,22 +1,22 @@
 import { z } from "zod";
+import { paginationQuerySchema } from "./common";
 
+// Content is mandatory and cannot be just whitespace.
 export const createCommentSchema = z.object({
-  authorName: z
-    .string()
-    .min(2, "El nombre debe tener al menos 2 caracteres")
-    .max(100, "El nombre no puede exceder 100 caracteres"),
-  content: z
-    .string()
-    .min(3, "La consulta debe tener al menos 3 caracteres")
-    .max(1000, "La consulta no puede exceder 1000 caracteres"),
+  authorName: z.string().trim().min(1, "authorName is required").max(100),
+  content: z.string().trim().min(1, "content is required").max(2000),
 });
 
 export const replyCommentSchema = z.object({
-  sellerReply: z
-    .string()
-    .min(1, "La respuesta no puede estar vacía")
-    .max(1000, "La respuesta no puede exceder 1000 caracteres"),
+  sellerReply: z.string().trim().min(1, "sellerReply is required").max(2000),
+});
+
+// GET /api/agencies/me/comments?unanswered=true
+export const myCommentsQuerySchema = paginationQuerySchema.extend({
+  unanswered: z
+    .enum(["true", "false"])
+    .default("false")
+    .transform((value) => value === "true"),
 });
 
 export type CreateCommentInput = z.infer<typeof createCommentSchema>;
-export type ReplyCommentInput = z.infer<typeof replyCommentSchema>;
