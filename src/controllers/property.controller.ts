@@ -13,6 +13,7 @@ import {
   paginated,
   queryOf,
   readJson,
+  success,
   uuidParam,
 } from "./http";
 
@@ -68,4 +69,13 @@ export const listOwn = handler(async (request) => {
   return paginated(
     await propertyService.listOwn(agency.id, { status }, listing)
   );
+});
+
+// DELETE /api/properties/:id  (only drafts can be deleted)
+export const removeDraft = handler<IdParams>(async (_request, { params }) => {
+  const id = uuidParam((await params).id);
+  const { agency } = await requireAgency();
+
+  await propertyService.removeDraft(agency.id, id);
+  return success();
 });

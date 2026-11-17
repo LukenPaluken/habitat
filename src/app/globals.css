@@ -1,0 +1,68 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    background-color: theme("colors.paper");
+    -webkit-text-size-adjust: 100%;
+  }
+
+  body {
+    @apply bg-paper font-sans text-[15px] leading-relaxed text-ink antialiased;
+  }
+
+  h1,
+  h2,
+  h3 {
+    @apply font-serif font-medium tracking-tight;
+  }
+
+  ::selection {
+    background-color: theme("colors.brick.wash");
+    color: theme("colors.ink");
+  }
+
+  :focus-visible {
+    outline: 2px solid theme("colors.ink");
+    outline-offset: 2px;
+  }
+
+  /* Evita el zoom automático de iOS al enfocar un campo. */
+  input,
+  select,
+  textarea {
+    font-size: 16px;
+  }
+  @media (min-width: 640px) {
+    input,
+    select,
+    textarea {
+      font-size: 14px;
+    }
+  }
+}
+
+@layer components {
+  /* Rótulos chicos en monoespaciada: fechas, categorías, contadores. */
+  .kicker {
+    @apply font-mono text-[11px] font-medium uppercase tracking-[0.08em] text-stone;
+  }
+
+  /* Tiras que se desplazan en horizontal (menú, pestañas) sin barra visible. */
+  .no-scrollbar {
+    scrollbar-width: none;
+  }
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
