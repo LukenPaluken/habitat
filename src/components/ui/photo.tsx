@@ -5,9 +5,9 @@ import { ImageOff } from "lucide-react";
 import { cn } from "@/lib/cn";
 
 /**
- * Foto de una propiedad o logo. Las URLs vienen de UploadThing o de cualquier
- * host que pegue el vendedor, por eso va con <img> y no con next/image (que
- * exige declarar cada dominio). Si la imagen falla, queda un recuadro neutro.
+ * Photo of a property or a logo. URLs come from UploadThing or from any host
+ * the seller pastes, hence a plain <img> instead of next/image (which
+ * requires declaring every domain). If the image fails, a neutral box remains.
  */
 export function Photo({
   src,

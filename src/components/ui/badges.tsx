@@ -5,7 +5,7 @@ import {
   type VisitRequestStatus,
 } from "@/lib/seller-types";
 
-// El estado siempre lleva texto además del color (no se lee solo por el tono).
+// Status always carries text as well as color (it is never read by hue alone).
 
 const TONES = {
   neutral: "border-rule-strong bg-paper text-graphite",

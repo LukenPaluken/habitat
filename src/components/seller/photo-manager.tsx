@@ -25,9 +25,9 @@ function isUrl(value: string): boolean {
 }
 
 /**
- * Galería de la propiedad: subir archivos (arrastrando o eligiendo), pegar una
- * URL, elegir la portada y quitar fotos. No sabe si está guardando en el
- * servidor o en memoria: eso lo resuelve quien la usa.
+ * Property gallery: upload files (drag and drop or pick), paste a URL,
+ * choose the cover and remove photos. It does not know whether it saves to
+ * the server or in memory: that is up to whoever uses it.
  */
 export function PhotoManager({
   photos,

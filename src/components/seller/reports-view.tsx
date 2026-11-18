@@ -47,7 +47,7 @@ export function ReportsView() {
   );
 }
 
-// --- tiempo promedio en mercado ------------------------------------------------
+// --- average time on market ----------------------------------------------------
 
 function MarketTime({ days }: { days: number | null }) {
   return (
@@ -82,7 +82,7 @@ function MarketTime({ days }: { days: number | null }) {
   );
 }
 
-// --- propiedades por estado ----------------------------------------------------
+// --- properties by status ------------------------------------------------------
 
 function StatusBars({ counts }: { counts: ApiReports["propertiesByStatus"] }) {
   const [asTable, setAsTable] = useState(false);
@@ -149,7 +149,7 @@ function StatusBars({ counts }: { counts: ApiReports["propertiesByStatus"] }) {
   );
 }
 
-// --- publicaciones y cierres por mes -------------------------------------------
+// --- publications and closings per month ---------------------------------------
 
 function useElementWidth(
   ref: React.RefObject<HTMLElement | null>,
@@ -170,7 +170,7 @@ function useElementWidth(
   return width;
 }
 
-/** Escala entera "linda": 0, 1, 2, 3… o 0, 5, 10… según el máximo. */
+/** "Nice" integer scale: 0, 1, 2, 3… or 0, 5, 10… depending on the maximum. */
 function niceScale(max: number) {
   const steps = [1, 2, 5, 10, 20, 50, 100, 200, 500, 1000];
   const step = steps.find((candidate) => max / candidate <= 4) ?? 1000;
@@ -179,7 +179,7 @@ function niceScale(max: number) {
   return { top, ticks };
 }
 
-/** Columna con el extremo libre redondeado (4px) y la base recta. */
+/** Column with a rounded free end (4px) and a square base. */
 function columnPath(
   x: number,
   baseline: number,
@@ -228,7 +228,7 @@ function MonthlyChart({ data }: { data: Monthly }) {
   const groupWidth = barWidth * 2 + 2;
   const labelEvery = slot < 40 ? 2 : 1;
 
-  // Solo se rotula el máximo de cada serie: el eje y el tooltip dan el resto.
+  // Only the peak of each series is labelled: the axis and tooltip give the rest.
   const peak = (key: "published" | "closed") => {
     const best = Math.max(...data.map((d) => d[key]));
     return best > 0 ? data.findIndex((d) => d[key] === best) : -1;
@@ -236,8 +236,8 @@ function MonthlyChart({ data }: { data: Monthly }) {
   const peaks = { published: peak("published"), closed: peak("closed") };
 
   const activeRow = active === null ? null : data[active];
-  // El tooltip va al costado de la columna del mes (a la derecha en la primera
-  // mitad del eje, a la izquierda en la segunda) para no tapar las barras.
+  // The tooltip sits beside the month's column (on the right in the first
+  // half of the axis, on the left in the second) so it does not cover the bars.
   const tipOnRight = active !== null && active < data.length / 2;
   const tipLeft =
     active === null
@@ -323,7 +323,7 @@ function MonthlyChart({ data }: { data: Monthly }) {
                   onBlur={() => setActive(null)}
                   className="outline-none"
                 >
-                  {/* zona de contacto: todo el alto de la columna del mes */}
+                  {/* hit area: the full height of the month's column */}
                   <rect
                     x={MARGIN.left + slot * index}
                     y={MARGIN.top - 14}
@@ -423,7 +423,7 @@ function MonthlyChart({ data }: { data: Monthly }) {
   );
 }
 
-// --- piezas compartidas --------------------------------------------------------
+// --- shared pieces -------------------------------------------------------------
 
 function ChartHeader({
   id,

@@ -66,7 +66,7 @@ export function PropertiesView() {
   const items = query.data?.data ?? [];
   const meta = query.data?.meta;
 
-  // Si dimos de baja la última fila de la última página, volvemos una atrás.
+  // If we cancelled the last row of the last page, go back one page.
   useEffect(() => {
     if (query.data && items.length === 0 && page > 1) setPage(page - 1);
   }, [query.data, items.length, page]);
@@ -101,7 +101,7 @@ export function PropertiesView() {
         title="Mis propiedades"
         actions={
           <Link
-            href="/vendedor/propiedades/nueva"
+            href="/seller/properties/new"
             className={buttonClasses({ variant: "primary" })}
           >
             + Nueva propiedad
@@ -159,7 +159,7 @@ export function PropertiesView() {
             title="Todavía no cargaste propiedades"
             action={
               <Link
-                href="/vendedor/propiedades/nueva"
+                href="/seller/properties/new"
                 className={buttonClasses({ variant: "primary" })}
               >
                 Publicar la primera

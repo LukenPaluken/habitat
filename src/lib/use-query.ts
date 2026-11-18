@@ -6,18 +6,18 @@ import { errorMessage } from "./api";
 export interface QueryState<T> {
   data: T | undefined;
   error: string | null;
-  /** Primera carga: todavía no hay nada para mostrar. */
+  /** First load: there is nothing to show yet. */
   loading: boolean;
-  /** Recarga con datos viejos en pantalla (se atenúan, no se reemplazan). */
+  /** Reload with stale data on screen (dimmed, not replaced). */
   refreshing: boolean;
   reload: () => Promise<void>;
   setData: (updater: (current: T) => T) => void;
 }
 
 /**
- * Carga de datos mínima: `key` identifica la consulta (cuando cambia, vuelve a
- * pedir) y `fetcher` hace el pedido. Las respuestas viejas que llegan tarde se
- * descartan, así un filtro lento no pisa al siguiente.
+ * Minimal data loading: `key` identifies the query (when it changes, it
+ * refetches) and `fetcher` performs the request. Stale responses that arrive
+ * late are discarded, so a slow filter never overwrites the next one.
  */
 export function useQuery<T>(
   key: string,

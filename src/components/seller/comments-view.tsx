@@ -139,7 +139,7 @@ function CommentItem({
     <li className="py-6">
       <p className="kicker">
         <Link
-          href={`/vendedor/propiedades/${comment.propertyId}/editar`}
+          href={`/seller/properties/${comment.propertyId}/edit`}
           className="underline-offset-4 hover:text-ink hover:underline"
         >
           {comment.propertyTitle}

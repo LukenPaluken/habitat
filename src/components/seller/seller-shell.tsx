@@ -18,8 +18,8 @@ import { Button } from "@/components/ui/button";
 import { ErrorState, RowsSkeleton } from "@/components/ui/states";
 import { SellerNav } from "./seller-nav";
 
-// Guarda del panel + datos compartidos: quién es la inmobiliaria logueada y
-// cuántas novedades tiene sin leer (el contador de la barra).
+// Panel guard + shared data: which agency is logged in and how many
+// unread events it has (the counter in the nav bar).
 
 interface SellerContextValue {
   agency: ApiAgency;
@@ -58,12 +58,12 @@ export function SellerShell({ children }: { children: React.ReactNode }) {
     try {
       await authClient.signOut();
     } catch {
-      // Si falla, igual salimos: el servidor invalida la sesión vencida.
+      // If it fails we leave anyway: the server invalidates the expired session.
     }
-    router.replace("/vendedor/login");
+    router.replace("/seller/login");
   }, [router]);
 
-  // Cualquier pedido que vuelva con 401 (sesión vencida) nos saca al login.
+  // Any request that comes back 401 (expired session) sends us to login.
   useEffect(() => {
     async function onUnauthorized() {
       if (leaving.current) return;
@@ -71,9 +71,9 @@ export function SellerShell({ children }: { children: React.ReactNode }) {
       try {
         await authClient.signOut();
       } catch {
-        // ignorado a propósito
+        // intentionally ignored
       }
-      router.replace(`/vendedor/login?next=${encodeURIComponent(pathname)}`);
+      router.replace(`/seller/login?next=${encodeURIComponent(pathname)}`);
     }
     window.addEventListener(UNAUTHORIZED_EVENT, onUnauthorized);
     return () => window.removeEventListener(UNAUTHORIZED_EVENT, onUnauthorized);
@@ -103,7 +103,7 @@ export function SellerShell({ children }: { children: React.ReactNode }) {
       const { meta } = await activityApi.list({ limit: 1 });
       setUnreadCount(meta.unreadCount ?? 0);
     } catch {
-      // El contador es accesorio: si falla no molestamos con un error.
+      // The counter is secondary: if it fails we do not bother with an error.
     }
   }, []);
 

@@ -1,7 +1,7 @@
 import { cn } from "@/lib/cn";
 import { Button } from "./button";
 
-/** Placeholder de carga: filas con el mismo ritmo que las reales. */
+/** Loading placeholder: rows with the same rhythm as the real ones. */
 export function RowsSkeleton({
   rows = 4,
   className,
@@ -70,7 +70,7 @@ export function ErrorState({
   );
 }
 
-/** Aviso dentro de un formulario o panel. */
+/** Notice inside a form or panel. */
 export function Notice({
   tone = "info",
   children,

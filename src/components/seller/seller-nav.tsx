@@ -6,11 +6,11 @@ import { cn } from "@/lib/cn";
 import { Button } from "@/components/ui/button";
 
 const LINKS = [
-  { href: "/vendedor/propiedades", label: "Mis propiedades" },
-  { href: "/vendedor/visitas", label: "Visitas" },
-  { href: "/vendedor/consultas", label: "Consultas" },
-  { href: "/vendedor/actividad", label: "Actividad" },
-  { href: "/vendedor/reportes", label: "Reportes" },
+  { href: "/seller/properties", label: "Mis propiedades" },
+  { href: "/seller/visits", label: "Visitas" },
+  { href: "/seller/inquiries", label: "Consultas" },
+  { href: "/seller/activity", label: "Actividad" },
+  { href: "/seller/reports", label: "Reportes" },
 ] as const;
 
 export function Wordmark({ className }: { className?: string }) {
@@ -50,7 +50,7 @@ export function SellerNav({
     <header className="border-b border-ink bg-sheet">
       <div className="mx-auto flex max-w-6xl flex-wrap items-center px-4 sm:px-6">
         <Link
-          href="/vendedor/propiedades"
+          href="/seller/properties"
           aria-label="Habitat, panel del vendedor"
           className="order-1 py-4"
         >
@@ -74,7 +74,7 @@ export function SellerNav({
         >
           {LINKS.map((link) => {
             const active = pathname.startsWith(link.href);
-            const isActivity = link.href === "/vendedor/actividad";
+            const isActivity = link.href === "/seller/activity";
             return (
               <Link
                 key={link.href}

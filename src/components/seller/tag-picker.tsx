@@ -6,7 +6,7 @@ import { SUGGESTED_TAGS } from "@/lib/property-form";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/field";
 
-/** Multi-selección de amenities: sugeridos + los que sume el vendedor. */
+/** Amenity multi-select: suggested ones + any the seller adds. */
 export function TagPicker({
   value,
   onChange,

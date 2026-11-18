@@ -1,5 +1,5 @@
-// Cliente HTTP del panel del vendedor. Todo pasa por acá para que los errores
-// del backend (en inglés, con códigos) lleguen a la interfaz ya traducidos.
+// HTTP client of the seller panel. Everything goes through here so backend
+// errors (in English, with codes) reach the UI already translated.
 
 export type PageMeta = {
   total: number;
@@ -20,7 +20,7 @@ export class ApiError extends Error {
     this.name = "ApiError";
   }
 
-  /** `{ campo: mensaje }` a partir de los issues de Zod que devuelve la API. */
+  /** `{ field: message }` built from the Zod issues the API returns. */
   get fieldErrors(): Record<string, string> {
     const result: Record<string, string> = {};
     if (!Array.isArray(this.details)) return result;
@@ -34,8 +34,8 @@ export class ApiError extends Error {
   }
 }
 
-// Mensajes de dominio del backend -> español. El resto pasa tal cual (los de
-// registro y login ya vienen en español).
+// Backend domain messages -> Spanish. The rest pass through as they are (the
+// register and login ones already come in Spanish).
 const TRANSLATIONS: [RegExp, string][] = [
   [/can no longer be edited/i, "Una propiedad cerrada ya no se puede editar."],
   [
@@ -149,7 +149,7 @@ export async function request<T, M = Record<string, never>>(
   return { data: json?.data as T, meta: (json?.meta ?? {}) as M };
 }
 
-/** `?a=1&b=2` sin los valores vacíos. */
+/** `?a=1&b=2` without the empty values. */
 export function qs(params: Record<string, string | number | undefined>) {
   const search = new URLSearchParams();
   for (const [key, value] of Object.entries(params)) {

@@ -10,11 +10,11 @@ import { Button } from "@/components/ui/button";
 import { Field, Input } from "@/components/ui/field";
 import { PasswordInput } from "./password-input";
 
-const HOME = "/vendedor/propiedades";
+const HOME = "/seller/properties";
 
-// Solo rutas internas del panel: nunca redirigimos a un `next` externo.
+// Panel-internal routes only: never redirect to an external `next`.
 function safeNext(raw: string | null): string {
-  return raw && raw.startsWith("/vendedor/") && !raw.startsWith("//")
+  return raw && raw.startsWith("/seller/") && !raw.startsWith("//")
     ? raw
     : HOME;
 }
@@ -33,7 +33,7 @@ export function LoginForm() {
   const [formError, setFormError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
-  // Si ya hay sesión de vendedor, no tiene sentido mostrar el formulario.
+  // With a seller session already open, showing the form makes no sense.
   useEffect(() => {
     agencyApi
       .get()
@@ -127,7 +127,7 @@ export function LoginForm() {
       <p className="mt-6 text-sm text-stone">
         ¿No tenés cuenta?{" "}
         <Link
-          href="/vendedor/registro"
+          href="/seller/register"
           className="font-medium text-ink underline decoration-rule-strong underline-offset-4 hover:decoration-ink"
         >
           Registrate

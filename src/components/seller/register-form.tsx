@@ -51,7 +51,7 @@ export function RegisterForm() {
     event.preventDefault();
     setFormError(null);
 
-    // Los opcionales vacíos no se mandan: el esquema los toma como ausentes.
+    // Empty optional fields are not sent: the schema treats them as absent.
     const payload = {
       name: form.name.trim(),
       email: form.email.trim(),
@@ -76,13 +76,13 @@ export function RegisterForm() {
     setSubmitting(true);
 
     try {
-      // Crea el usuario y la inmobiliaria en un solo paso…
+      // Creates the user and the agency in a single step…
       await request("POST", "/api/auth/register-seller", parsed.data);
     } catch (error) {
       setSubmitting(false);
       const message = errorMessage(error);
       if (error instanceof ApiError && error.status === 409) {
-        // …y el conflicto dice cuál de los dos datos únicos ya existe.
+        // …and the conflict says which of the two unique values already exists.
         if (/fantas/i.test(message)) setErrors({ fantasyName: message });
         else if (/correo|email/i.test(message)) setErrors({ email: message });
         else setFormError(message);
@@ -92,19 +92,19 @@ export function RegisterForm() {
       return;
     }
 
-    // El registro no abre sesión por sí solo: entramos con las mismas credenciales.
+    // Registering does not open a session by itself: sign in with the same credentials.
     const { error } = await authClient.signIn.email({
       email: parsed.data.email,
       password: parsed.data.password,
     });
     if (error) {
       toast.success("Tu inmobiliaria quedó creada. Ingresá para continuar.");
-      router.replace("/vendedor/login");
+      router.replace("/seller/login");
       return;
     }
 
     toast.success(`Listo: ${parsed.data.fantasyName} ya está en Habitat.`);
-    router.replace("/vendedor/propiedades");
+    router.replace("/seller/properties");
     router.refresh();
   }
 
@@ -256,7 +256,7 @@ export function RegisterForm() {
       <p className="mt-6 text-sm text-stone">
         ¿Ya tenés cuenta?{" "}
         <Link
-          href="/vendedor/login"
+          href="/seller/login"
           className="font-medium text-ink underline decoration-rule-strong underline-offset-4 hover:decoration-ink"
         >
           Ingresá

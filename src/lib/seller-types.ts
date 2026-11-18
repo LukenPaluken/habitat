@@ -12,8 +12,8 @@ import type {
   VisitRequestStatus,
 } from "@/models";
 
-// Tipos del lado del cliente: lo que llega por HTTP después de JSON.stringify
-// (las fechas viajan como string ISO, y el precio `numeric` como string).
+// Client-side types: what arrives over HTTP after JSON.stringify
+// (dates travel as ISO strings, and the `numeric` price as a string).
 
 type Wire<T> = T extends Date
   ? string
@@ -100,7 +100,7 @@ export const PROPERTY_STATUS_LABEL: Record<PropertyStatus, string> = {
   CANCELADA: "Cancelada",
 };
 
-/** Estados cerrados: la propiedad ya no se edita. */
+/** Closed statuses: the property can no longer be edited. */
 export const FROZEN_STATUSES: PropertyStatus[] = [
   "VENDIDA",
   "ALQUILADA",

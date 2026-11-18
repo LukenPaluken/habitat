@@ -4,8 +4,8 @@ import { useId } from "react";
 import { ChevronDown } from "lucide-react";
 import { cn } from "@/lib/cn";
 
-// Campos de formulario. `Field` junta etiqueta, ayuda y error y le pasa a su
-// hijo los ids correctos para que el lector de pantalla los lea juntos.
+// Form fields. `Field` groups label, hint and error and passes its child
+// the right ids so screen readers read them together.
 
 interface FieldProps {
   label: string;
@@ -114,7 +114,7 @@ export function Select({
   );
 }
 
-/** Opciones excluyentes en una sola fila (Venta / Alquiler, ARS / USD). */
+/** Mutually exclusive options in a single row (Venta / Alquiler, ARS / USD). */
 export function Segmented<T extends string>({
   label,
   value,

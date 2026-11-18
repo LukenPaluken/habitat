@@ -12,7 +12,7 @@ import type {
   VisitRequestStatus,
 } from "./seller-types";
 
-// Un wrapper por endpoint del vendedor (ver "Seller" en el README).
+// One wrapper per seller endpoint (see "Seller" in the README).
 
 export type PropertySort =
   | "date_desc"
@@ -24,7 +24,7 @@ export type PropertySort =
 
 type Paging = { page?: number; limit?: number };
 
-// --- inmobiliaria ----------------------------------------------------------------
+// --- agency ----------------------------------------------------------------------
 
 export const agencyApi = {
   get: () => request<ApiAgency>("GET", "/api/agencies/me"),
@@ -37,7 +37,7 @@ export const agencyApi = {
   remove: () => request<unknown>("DELETE", "/api/agencies/me"),
 };
 
-// --- propiedades -----------------------------------------------------------------
+// --- properties ------------------------------------------------------------------
 
 export type PropertyPayload = {
   title: string;
@@ -81,7 +81,7 @@ export const propertyApi = {
     request<unknown>("PATCH", `/api/properties/${id}/images/${imageId}/cover`),
 };
 
-// --- visitas ---------------------------------------------------------------------
+// --- visits ----------------------------------------------------------------------
 
 export const visitApi = {
   list: (params: Paging & { status?: VisitRequestStatus }) =>
@@ -95,7 +95,7 @@ export const visitApi = {
   ) => request<ApiVisit>("PATCH", `/api/visits/${id}/status`, { status }),
 };
 
-// --- consultas -------------------------------------------------------------------
+// --- inquiries -------------------------------------------------------------------
 
 export const commentApi = {
   list: (params: Paging & { unanswered?: boolean }) =>
@@ -110,7 +110,7 @@ export const commentApi = {
     request<ApiComment>("POST", `/api/comments/${id}/reply`, { sellerReply }),
 };
 
-// --- actividad -------------------------------------------------------------------
+// --- activity --------------------------------------------------------------------
 
 export const activityApi = {
   list: (params: Paging & { unread?: boolean }) =>
@@ -130,7 +130,7 @@ export const activityApi = {
     ),
 };
 
-// --- reportes --------------------------------------------------------------------
+// --- reports ---------------------------------------------------------------------
 
 export const reportApi = {
   get: () => request<ApiReports>("GET", "/api/agencies/me/reports"),

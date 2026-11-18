@@ -11,17 +11,17 @@ import {
 import { Button } from "./button";
 import { Input } from "./field";
 
-// Confirmación para acciones destructivas: `await confirm({...})` devuelve true
-// o false. Usa el <dialog> nativo, que ya resuelve foco, Escape y fondo inerte.
+// Confirmation for destructive actions: `await confirm({...})` returns true
+// or false. Uses the native <dialog> (focus, Escape and inert page for free).
 
 export interface ConfirmOptions {
   title: string;
   description?: React.ReactNode;
   confirmLabel?: string;
   cancelLabel?: string;
-  /** "danger" pinta la confirmación en el color de alerta. */
+  /** "danger" paints the confirmation in the alert color. */
   tone?: "default" | "danger";
-  /** Si se indica, hay que escribir este texto para habilitar el botón. */
+  /** If set, this text must be typed to enable the button. */
   requireText?: string;
 }
 

@@ -1,6 +1,6 @@
 import { UiProviders } from "@/components/ui/providers";
 
-export default function VendedorLayout({
+export default function SellerLayout({
   children,
 }: {
   children: React.ReactNode;

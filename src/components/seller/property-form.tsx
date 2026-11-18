@@ -47,14 +47,14 @@ type Props =
   | {
       mode: "edit";
       property: ApiPropertyDetail;
-      /** Si existe, el formulario se muestra de solo lectura con este motivo. */
+      /** If set, the form is shown read-only with this reason. */
       readOnlyReason?: string;
       onReload: () => Promise<void>;
     };
 
 type Intent = "draft" | "publish" | "save";
 
-const LIST = "/vendedor/propiedades";
+const LIST = "/seller/properties";
 
 function withCover(photos: PhotoItem[]): PhotoItem[] {
   return photos.map((photo, index) => ({ ...photo, isCover: index === 0 }));
@@ -129,7 +129,7 @@ export function PropertyForm(props: Props) {
     (event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
       set(key, event.target.value);
 
-  // --- fotos -----------------------------------------------------------------
+  // --- photos ----------------------------------------------------------------
 
   async function addPhotos(urls: string[]) {
     setPhotosError(null);
@@ -167,7 +167,7 @@ export function PropertyForm(props: Props) {
   }
 
   async function removePhoto(id: string) {
-    // Una propiedad que ya salió de borrador no puede quedarse sin fotos.
+    // A property that has left draft status cannot end up without photos.
     const isLastOfLive =
       edit && edit.property.status !== "BORRADOR" && photos.length <= 1;
     if (isLastOfLive) {
@@ -194,7 +194,7 @@ export function PropertyForm(props: Props) {
     await edit.onReload();
   }
 
-  // --- guardado --------------------------------------------------------------
+  // --- saving ----------------------------------------------------------------
 
   function focusFirstError() {
     window.setTimeout(() => {
@@ -264,8 +264,8 @@ export function PropertyForm(props: Props) {
       return;
     }
 
-    // Alta: se crea como borrador, se suben las fotos y recién ahí se publica,
-    // así una propiedad publicada nunca existe sin fotos.
+    // Create: save as a draft, upload the photos and only then publish,
+    // so a published property never exists without photos.
     let createdId: string | null = null;
     try {
       const { data: created } = await propertyApi.create({
@@ -286,7 +286,7 @@ export function PropertyForm(props: Props) {
         toast.error(
           `Guardamos la propiedad como borrador, pero ${failed} ${failed === 1 ? "foto no pudo agregarse" : "fotos no pudieron agregarse"}. Completalas desde acá.`
         );
-        router.replace(`${LIST}/${created.id}/editar`);
+        router.replace(`${LIST}/${created.id}/edit`);
         return;
       }
 
@@ -304,7 +304,7 @@ export function PropertyForm(props: Props) {
         toast.error(
           `Se guardó como borrador, pero no pudimos publicarla: ${errorMessage(error)}`
         );
-        router.replace(`${LIST}/${createdId}/editar`);
+        router.replace(`${LIST}/${createdId}/edit`);
         return;
       }
       if (error instanceof ApiError && Object.keys(error.fieldErrors).length) {

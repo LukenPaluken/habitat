@@ -1,6 +1,6 @@
 /**
- * Elevación de dos edificios con cotas, en línea fina. Es decorativa: acompaña
- * a las pantallas de ingreso y registro.
+ * Elevation of two buildings with dimension lines, in thin strokes. Purely
+ * decorative: it accompanies the login and register screens.
  */
 export function HouseDrawing({ className }: { className?: string }) {
   const hatch = Array.from({ length: 22 }, (_, i) => 24 + i * 20);
@@ -16,7 +16,7 @@ export function HouseDrawing({ className }: { className?: string }) {
       strokeWidth="1.25"
       strokeLinecap="square"
     >
-      {/* suelo */}
+      {/* ground */}
       <path d="M12 300H468" strokeWidth="2" />
       <path
         d={hatch.map((x) => `M${x} 300l-8 9`).join("")}
@@ -24,7 +24,7 @@ export function HouseDrawing({ className }: { className?: string }) {
         opacity=".55"
       />
 
-      {/* edificio de departamentos */}
+      {/* apartment building */}
       <rect x="40" y="90" width="160" height="210" />
       <rect x="35" y="80" width="170" height="10" />
       {[110, 160, 210].flatMap((y) =>
@@ -42,7 +42,7 @@ export function HouseDrawing({ className }: { className?: string }) {
       <rect x="106" y="262" width="28" height="38" />
       <path d="M120 262v38" strokeWidth=".75" />
 
-      {/* casa */}
+      {/* house */}
       <rect x="230" y="200" width="130" height="100" />
       <path d="M220 200 295 138 370 200Z" />
       <rect x="326" y="150" width="16" height="34" />
@@ -52,11 +52,11 @@ export function HouseDrawing({ className }: { className?: string }) {
       <circle cx="302" cy="276" r="1.5" fill="currentColor" stroke="none" />
       <circle cx="295" cy="190" r="9" />
 
-      {/* árbol */}
+      {/* tree */}
       <circle cx="418" cy="232" r="34" />
       <path d="M418 266V300M418 246l-12-12M418 252l12-14" />
 
-      {/* cotas */}
+      {/* dimension lines */}
       <g strokeWidth="1" opacity=".8">
         <path d="M40 332H200M40 326v12M200 326v12" />
         <path d="M18 90V300M12 90h12M12 300h12" />

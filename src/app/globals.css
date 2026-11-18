@@ -28,7 +28,7 @@
     outline-offset: 2px;
   }
 
-  /* Evita el zoom automático de iOS al enfocar un campo. */
+  /* Prevents iOS auto-zoom when focusing a field. */
   input,
   select,
   textarea {
@@ -44,12 +44,12 @@
 }
 
 @layer components {
-  /* Rótulos chicos en monoespaciada: fechas, categorías, contadores. */
+  /* Small monospaced labels: dates, categories, counters. */
   .kicker {
     @apply font-mono text-[11px] font-medium uppercase tracking-[0.08em] text-stone;
   }
 
-  /* Tiras que se desplazan en horizontal (menú, pestañas) sin barra visible. */
+  /* Horizontally scrolling strips (menu, tabs) with no visible scrollbar. */
   .no-scrollbar {
     scrollbar-width: none;
   }

@@ -12,8 +12,8 @@ import { useSeller } from "./seller-shell";
 export function PropertyEditView({ id }: { id: string }) {
   const { agency } = useSeller();
 
-  // Además de la propiedad miramos si tiene visitas confirmadas: en ese caso
-  // el servidor no deja editarla y es mejor decirlo antes de que escriba.
+  // Besides the property we check for confirmed visits: in that case the
+  // server refuses edits, and it is better to say so before the user types.
   const query = useQuery(id, async () => {
     const [{ data: property }, confirmed] = await Promise.all([
       propertyApi.get(id),
@@ -29,7 +29,7 @@ export function PropertyEditView({ id }: { id: string }) {
 
   if (query.loading) return <RowsSkeleton rows={3} />;
 
-  // El detalle es público: si no es de esta inmobiliaria, para el panel no existe.
+  // The detail is public: if it is not this agency's, it does not exist here.
   if (!query.data || query.data.property.agency.id !== agency.id) {
     return (
       <div className="flex flex-col items-start gap-5">
@@ -41,7 +41,7 @@ export function PropertyEditView({ id }: { id: string }) {
           onRetry={query.error ? query.reload : undefined}
         />
         <Link
-          href="/vendedor/propiedades"
+          href="/seller/properties"
           className={buttonClasses({ variant: "outline" })}
         >
           ← Volver a mis propiedades
@@ -62,7 +62,7 @@ export function PropertyEditView({ id }: { id: string }) {
 
   return (
     <PropertyForm
-      // Al recargar cambian las fotos; la clave evita pisar lo que se está escribiendo.
+      // Photos change on reload; the key avoids overwriting what is being typed.
       key={property.id}
       mode="edit"
       property={property}

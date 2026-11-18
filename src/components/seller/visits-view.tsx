@@ -50,7 +50,7 @@ interface VisitAction {
   };
 }
 
-// Pendiente -> Confirmada -> Realizada; Rechazada/Cancelada mientras no termine.
+// Pendiente -> Confirmada -> Realizada; Rechazada/Cancelada until it is over.
 function actionsFor(status: VisitRequestStatus): VisitAction[] {
   const reject: VisitAction = {
     label: "Rechazar",
@@ -181,7 +181,7 @@ export function VisitsView() {
                 >
                   <div className="min-w-0">
                     <Link
-                      href={`/vendedor/propiedades/${visit.propertyId}/editar`}
+                      href={`/seller/properties/${visit.propertyId}/edit`}
                       className="kicker underline-offset-4 hover:text-ink hover:underline"
                     >
                       {visit.propertyTitle}

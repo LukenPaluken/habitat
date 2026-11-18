@@ -6,9 +6,9 @@ import type {
   PropertyType,
 } from "./seller-types";
 
-// Estado, validación y armado del payload del formulario de propiedades. La
-// validación del servidor sigue siendo la que manda; esto solo evita ida y
-// vuelta por errores obvios y los dice en castellano, campo por campo.
+// State, validation and payload building for the property form. Server
+// validation remains the authority; this only avoids round trips for
+// obvious mistakes and reports them in Spanish, field by field.
 
 export interface PropertyFormState {
   title: string;
@@ -94,7 +94,7 @@ export function formFromProperty(
   };
 }
 
-/** Un terreno no tiene ambientes, dormitorios, baños ni superficie cubierta. */
+/** A Terreno has no rooms, bedrooms, bathrooms or covered area. */
 export const isLand = (type: PropertyType) => type === "Terreno";
 
 function parseOptional(raw: string): number | null | "invalid" {

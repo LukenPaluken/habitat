@@ -20,15 +20,15 @@ const PAGE_SIZE = 15;
 
 type Filter = "all" | "unread";
 
-// Cada tipo de novedad tiene su pantalla; las reseñas se leen en la página
-// pública de la inmobiliaria, así que no hay a dónde llevar.
+// Each kind of event has its own screen; reviews are read on the agency's
+// public page, so there is nowhere to link to.
 const KIND: Record<
   ApiActivity["type"],
   { label: string; href: string | null }
 > = {
-  new_comment: { label: "Consulta", href: "/vendedor/consultas" },
-  new_visit: { label: "Visita", href: "/vendedor/visitas" },
-  property_state_change: { label: "Estado", href: "/vendedor/propiedades" },
+  new_comment: { label: "Consulta", href: "/seller/inquiries" },
+  new_visit: { label: "Visita", href: "/seller/visits" },
+  property_state_change: { label: "Estado", href: "/seller/properties" },
   new_review: { label: "Reseña", href: null },
 };
 

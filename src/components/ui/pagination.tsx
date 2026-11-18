@@ -1,6 +1,6 @@
 import { cn } from "@/lib/cn";
 
-/** Lista de páginas con elipsis: 1 … 4 5 [6] 7 8 … 20 */
+/** Page list with ellipses: 1 … 4 5 [6] 7 8 … 20 */
 function pagesToShow(page: number, total: number): (number | "gap")[] {
   if (total <= 7) return Array.from({ length: total }, (_, i) => i + 1);
 

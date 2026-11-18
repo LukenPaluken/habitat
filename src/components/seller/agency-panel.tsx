@@ -13,8 +13,8 @@ import { Photo } from "@/components/ui/photo";
 import { useToast } from "@/components/ui/toast";
 import { useSeller } from "./seller-shell";
 
-// "Mi inmobiliaria": resumen siempre a la vista y, al editar, el formulario en
-// el mismo lugar. Vive dentro de Mis propiedades, como pide el alcance.
+// "My agency": a summary that is always visible and, when editing, the form
+// in the same place. Lives inside My properties, as the scope requires.
 
 function Logo({ agency, size }: { agency: ApiAgency; size: string }) {
   return agency.logoUrl ? (

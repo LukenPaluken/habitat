@@ -12,13 +12,13 @@ import { PropertyStatusBadge } from "@/components/ui/badges";
 import type { ConfirmOptions } from "@/components/ui/confirm";
 import { Photo } from "@/components/ui/photo";
 
-// Qué botones de estado ofrece cada fila. Es el mismo grafo que valida el
-// servidor (PUBLICADA -> PAUSADA / RESERVADA …); el servidor sigue siendo quien
-// manda, esto solo evita mostrar botones que siempre terminarían en 409.
+// Which status buttons each row offers. It is the same graph the server
+// validates (PUBLICADA -> PAUSADA / RESERVADA …); the server still has the
+// last word, this only avoids showing buttons that would always end in 409.
 
 export interface StatusAction {
   label: string;
-  /** Estado destino; sin él, la acción elimina el borrador. */
+  /** Target status; without it, the action deletes the draft. */
   to?: PropertyStatus;
   variant: "ink" | "outline" | "danger";
   confirm?: ConfirmOptions;
@@ -116,7 +116,7 @@ export function PropertyRow({
 
       <div className="min-w-0">
         <Link
-          href={`/vendedor/propiedades/${property.id}/editar`}
+          href={`/seller/properties/${property.id}/edit`}
           className="font-medium leading-snug text-ink underline-offset-4 hover:underline"
         >
           {property.title}
@@ -154,7 +154,7 @@ export function PropertyRow({
 
       <div className="col-span-2 flex flex-wrap gap-2 sm:col-start-2">
         <Link
-          href={`/vendedor/propiedades/${property.id}/editar`}
+          href={`/seller/properties/${property.id}/edit`}
           className={buttonClasses({ variant: "outline", size: "sm" })}
         >
           {frozen ? "Ver" : "Editar"}

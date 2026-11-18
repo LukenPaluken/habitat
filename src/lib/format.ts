@@ -37,13 +37,13 @@ const visitDayFormat = new Intl.DateTimeFormat(LOCALE, {
   month: "long",
 });
 
-/** "Viernes 20 de noviembre" */
+/** Weekday and date, e.g. "Viernes 20 de noviembre". */
 export function formatVisitDay(iso: string): string {
   const text = visitDayFormat.format(new Date(iso)).replace(",", "");
   return text.charAt(0).toUpperCase() + text.slice(1);
 }
 
-/** "09:29 hs" */
+/** Time, e.g. "09:29 hs". */
 export function formatVisitTime(iso: string): string {
   return `${timeFormat.format(new Date(iso))} hs`;
 }
@@ -54,7 +54,7 @@ export function formatDate(iso: string): string {
 
 const relativeFormat = new Intl.RelativeTimeFormat(LOCALE, { numeric: "auto" });
 
-/** "hace 10 min", "ayer", "hace 3 días"; pasada una semana, la fecha. */
+/** Relative time: "hace 10 min", "ayer", "hace 3 días"; after a week, the date. */
 export function formatRelative(iso: string, now: number = Date.now()): string {
   const seconds = Math.round((new Date(iso).getTime() - now) / 1000);
   const abs = Math.abs(seconds);
@@ -85,12 +85,12 @@ function monthDate(key: string): Date {
   return new Date(Date.UTC(year, month - 1, 1));
 }
 
-/** "2026-08" -> "ago" */
+/** Short month name: "2026-08" -> "ago". */
 export function formatMonthShort(key: string): string {
   return monthFormat.format(monthDate(key)).replace(".", "");
 }
 
-/** "2026-08" -> "agosto de 2026" */
+/** Long month: "2026-08" -> "agosto de 2026". */
 export function formatMonthLong(key: string): string {
   return monthLongFormat.format(monthDate(key));
 }
@@ -99,7 +99,7 @@ export function plural(count: number, one: string, many: string): string {
   return count === 1 ? one : many;
 }
 
-/** Iniciales para el monograma cuando la inmobiliaria no tiene logo. */
+/** Initials for the monogram when the agency has no logo. */
 export function initialsOf(name: string): string {
   const words = name.trim().split(/\s+/).filter(Boolean);
   return (

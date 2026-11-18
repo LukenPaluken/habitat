@@ -6,7 +6,7 @@ export const metadata: Metadata = { title: "Ingresar" };
 
 export default function LoginPage() {
   return (
-    // useSearchParams (el `next` de la redirección) pide un límite de Suspense.
+    // useSearchParams (the redirect's `next`) needs a Suspense boundary.
     <Suspense>
       <LoginForm />
     </Suspense>

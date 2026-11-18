@@ -5,11 +5,11 @@ import type { OurFileRouter } from "@/app/api/uploadthing/core";
 
 const { uploadFiles } = genUploader<OurFileRouter>();
 
-// El router de UploadThing acepta hasta 4 imágenes de 4 MB por pedido.
+// The UploadThing router accepts up to 4 images of 4 MB per request.
 const BATCH = 4;
 const MAX_BYTES = 4 * 1024 * 1024;
 
-/** Sube las imágenes a UploadThing y devuelve sus URLs, en el mismo orden. */
+/** Uploads the images to UploadThing and returns their URLs, in the same order. */
 export async function uploadImages(files: File[]): Promise<string[]> {
   const tooBig = files.find((file) => file.size > MAX_BYTES);
   if (tooBig) {

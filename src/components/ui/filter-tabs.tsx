@@ -3,11 +3,11 @@ import { cn } from "@/lib/cn";
 export interface FilterOption<T extends string> {
   value: T;
   label: string;
-  /** Número chico al lado de la etiqueta (ej. pendientes). */
+  /** Small number next to the label (e.g. pending ones). */
   count?: number;
 }
 
-/** Filtro de una sola opción, como pestañas subrayadas. */
+/** Single-choice filter, rendered as underlined tabs. */
 export function FilterTabs<T extends string>({
   label,
   value,
@@ -20,8 +20,8 @@ export function FilterTabs<T extends string>({
   onChange: (value: T) => void;
 }) {
   return (
-    // La línea de base va afuera: así el contenedor que scrollea en horizontal
-    // no genera una barra vertical por el solapamiento del subrayado.
+    // The baseline lives outside so that the horizontally scrolling container
+    // does not produce a vertical scrollbar from the underline overlap.
     <div className="-mx-4 border-b border-rule sm:mx-0">
       <div
         role="group"
