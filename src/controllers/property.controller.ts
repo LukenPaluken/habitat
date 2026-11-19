@@ -41,6 +41,15 @@ export const getById = handler<IdParams>(async (_request, { params }) => {
   return ok(await propertyService.getDetail(id, viewer?.id));
 });
 
+// DELETE /api/properties/:id  (only a draft; anything published is closed with CANCELADA)
+export const removeDraft = handler<IdParams>(async (_request, { params }) => {
+  const id = uuidParam((await params).id);
+  const { agency } = await requireAgency();
+
+  await propertyService.removeDraft(agency.id, id);
+  return success();
+});
+
 // PATCH /api/properties/:id
 export const update = handler<IdParams>(async (request, { params }) => {
   const id = uuidParam((await params).id);

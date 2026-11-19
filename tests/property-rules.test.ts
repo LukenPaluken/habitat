@@ -193,3 +193,35 @@ describe("drafts", () => {
     );
   });
 });
+
+describe("deleting a property", () => {
+  it("is only possible for a draft, by its owner", async () => {
+    const owner = await createSeller();
+    const stranger = await createSeller();
+    const draft = await createProperty(owner.agency.id);
+
+    await expectError(
+      propertyService.removeDraft(stranger.agency.id, draft.id),
+      ForbiddenError
+    );
+    await propertyService.removeDraft(owner.agency.id, draft.id);
+
+    await expectError(
+      propertyService.getDetail(draft.id, owner.agency.id),
+      NotFoundError
+    );
+  });
+
+  it("is refused once the property was published (409): it is closed with CANCELADA instead", async () => {
+    const { agency } = await createSeller();
+    const published = await createProperty(agency.id, { status: "PUBLICADA" });
+
+    await expectError(
+      propertyService.removeDraft(agency.id, published.id),
+      ConflictError
+    );
+    expect(
+      (await propertyService.getDetail(published.id, agency.id)).status
+    ).toBe("PUBLICADA");
+  });
+});

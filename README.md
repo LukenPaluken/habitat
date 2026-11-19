@@ -125,6 +125,7 @@ service function: the query itself is already built once in
 | `GET /api/agencies/me/properties?status=`                      | "Mis propiedades": every status                                                                    |
 | `POST /api/properties`                                         | Create (starts `BORRADOR` or `PUBLICADA`)                                                          |
 | `PATCH /api/properties/:id`                                    | Edit (blocked if closed or with `Confirmada` visits)                                               |
+| `DELETE /api/properties/:id`                                   | Delete a **draft** (409 once it was published: close it with `CANCELADA`)                          |
 | `PATCH /api/properties/:id/status`                             | State machine: logs history + creates activity                                                     |
 | `GET /api/properties/:id/status-history`                       | The audit log of a property, oldest first                                                          |
 | `POST /api/properties/:id/images` · `DELETE …/images/:imageId` | Gallery                                                                                            |

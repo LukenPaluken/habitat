@@ -230,6 +230,27 @@ Content-Type: {{json}}
 ### Remove a photo
 DELETE {{baseUrl}}/api/properties/{{propertyId}}/images/{{imageId}}
 
+### A throwaway draft...
+# @name createDraft
+POST {{baseUrl}}/api/properties
+Content-Type: {{json}}
+
+{
+  "title": "Borrador descartable",
+  "description": "Se crea solo para borrarlo en el próximo request.",
+  "propertyType": "Terreno",
+  "operationType": "Venta",
+  "price": 1000,
+  "totalArea": 100,
+  "address": "Calle 1 100",
+  "neighborhood": "Centro"
+}
+
+@draftId = {{createDraft.response.body.$.data.id}}
+
+### ...and delete it (only a BORRADOR: 409 once a property was published, close it with CANCELADA instead)
+DELETE {{baseUrl}}/api/properties/{{draftId}}
+
 ###############################################################################
 # Seller: questions, visits, activity, reports
 ###############################################################################
