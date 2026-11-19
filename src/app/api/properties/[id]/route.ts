@@ -3,3 +3,4 @@ import * as propertyController from "@/controllers/property.controller";
 
 export const GET = propertyController.getById;
 export const PATCH = propertyController.update;
+export const DELETE = propertyController.removeDraft;

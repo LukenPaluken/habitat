@@ -226,3 +226,10 @@ export async function countByAgencyAndStatuses(
     );
   return total;
 }
+
+export async function deleteById(
+  id: string,
+  executor: DbExecutor = db
+): Promise<void> {
+  await executor.delete(properties).where(eq(properties.id, id));
+}

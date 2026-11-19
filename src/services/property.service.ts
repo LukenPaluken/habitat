@@ -202,3 +202,18 @@ export async function changeStatus(
     return updated;
   });
 }
+
+// A draft was never public, so it can simply be deleted (its photos and audit
+// log go with it). Anything that has been published keeps its history and is
+// closed with CANCELADA instead.
+export async function removeDraft(agencyId: string, propertyId: string) {
+  const property = await getOwnedProperty(agencyId, propertyId);
+
+  if (property.status !== "BORRADOR") {
+    throw new ConflictError(
+      "Only drafts can be deleted. Use the CANCELADA status for the rest"
+    );
+  }
+
+  await propertyRepository.deleteById(propertyId);
+}
