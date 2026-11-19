@@ -72,13 +72,16 @@ export async function existsWithStatusForProperty(
 // Every visit request received on the agency's properties, newest first.
 export async function listByAgency(
   agencyId: string,
-  filters: { status?: VisitRequestStatus },
+  filters: { status?: VisitRequestStatus; propertyId?: string },
   pagination: PaginationParams,
   executor: DbExecutor = db
 ) {
   const where = and(
     eq(properties.agencyId, agencyId),
-    filters.status ? eq(visitRequests.status, filters.status) : undefined
+    filters.status ? eq(visitRequests.status, filters.status) : undefined,
+    filters.propertyId
+      ? eq(visitRequests.propertyId, filters.propertyId)
+      : undefined
   );
 
   const [items, [{ total }]] = await Promise.all([

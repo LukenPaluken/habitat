@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/Button";
 import { Pagination } from "@/components/ui/Pagination";
 import { EmptyState, ErrorState, LoadingState } from "@/components/ui/States";
 import { useFetch } from "@/hooks/useFetch";
+import { useHashTarget } from "@/hooks/useHashTarget";
 import {
   receivedCommentsUrl,
   type ReceivedCommentsResponse,
@@ -14,17 +15,20 @@ import { groupBy } from "@/lib/group";
 import type { ReceivedComment } from "@/types/api";
 import { cn } from "@/lib/utils";
 import { PageHeader } from "../PageHeader";
+import { PropertyScope } from "../PropertyScope";
 import { InquiryItem } from "./InquiryItem";
 
 const PAGE_SIZE = 20;
 
 /** The questions received, grouped by property, to answer them inline. */
-export function InquiriesScreen() {
-  const [onlyPending, setOnlyPending] = useState(true);
+export function InquiriesScreen({ propertyId }: { propertyId?: string }) {
+  // Coming from the feed, the question may already be answered: show them all.
+  const [onlyPending, setOnlyPending] = useState(!propertyId);
   const [page, setPage] = useState(1);
   const { data, error, isLoading, reload } = useFetch<ReceivedCommentsResponse>(
-    receivedCommentsUrl(onlyPending, page, PAGE_SIZE)
+    receivedCommentsUrl(onlyPending, page, PAGE_SIZE, propertyId)
   );
+  const targetId = useHashTarget(Boolean(data));
 
   // Questions answered from this screen: they show as answered right away
   // (and stay on screen even under "Pendientes") without refetching the list.
@@ -60,6 +64,10 @@ export function InquiriesScreen() {
             : undefined
         }
       />
+
+      {propertyId && (
+        <PropertyScope title={groups[0]?.title} clearHref="/panel/consultas" />
+      )}
 
       <div role="group" aria-label="Filtrar" className="flex gap-2">
         {[
@@ -118,6 +126,7 @@ export function InquiriesScreen() {
                   <InquiryItem
                     key={comment.id}
                     comment={comment}
+                    highlighted={targetId === `consulta-${comment.id}`}
                     onReplied={(saved) =>
                       setReplied((current) => ({
                         ...current,

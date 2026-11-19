@@ -14,7 +14,7 @@ import * as propertyRepository from "@/repositories/property.repository";
 export async function ask(propertyId: string, input: CreateCommentInput) {
   const property = await propertyRepository.findById(propertyId);
   if (!property || property.status === "BORRADOR") {
-    throw new NotFoundError("Property not found");
+    throw new NotFoundError("No encontramos la propiedad.");
   }
 
   return withTransaction(async (tx) => {
@@ -45,7 +45,7 @@ export async function listForProperty(
 ) {
   const property = await propertyRepository.findById(propertyId);
   if (!property || property.status === "BORRADOR") {
-    throw new NotFoundError("Property not found");
+    throw new NotFoundError("No encontramos la propiedad.");
   }
   return commentRepository.listByProperty(propertyId, pagination);
 }
@@ -58,20 +58,20 @@ export async function reply(
   sellerReply: string
 ) {
   const comment = await commentRepository.findByIdWithProperty(commentId);
-  if (!comment) throw new NotFoundError("Comment not found");
+  if (!comment) throw new NotFoundError("No encontramos la consulta.");
   if (comment.property.agencyId !== agencyId) {
-    throw new ForbiddenError("Not your property");
+    throw new ForbiddenError("Esta propiedad no es de tu inmobiliaria.");
   }
 
   const updated = await commentRepository.setReply(commentId, sellerReply);
-  if (!updated) throw new ConflictError("This comment already has a reply");
+  if (!updated) throw new ConflictError("Esta consulta ya fue respondida.");
   return updated;
 }
 
 // "Consultas" screen: everything received, plus the pending counter.
 export async function listReceived(
   agencyId: string,
-  filters: { unansweredOnly: boolean },
+  filters: { unansweredOnly: boolean; propertyId?: string },
   pagination: PaginationParams
 ) {
   const [page, unanswered] = await Promise.all([

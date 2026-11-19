@@ -149,7 +149,16 @@ Content-Type: {{json}}
 ###############################################################################
 
 ### My agency
+# @name myAgency
 GET {{baseUrl}}/api/agencies/me
+
+@myAgencyId = {{myAgency.response.body.$.data.id}}
+
+### The same edit with the id in the URL (PUT or PATCH): 403 if the id is not your agency
+PUT {{baseUrl}}/api/agencies/{{myAgencyId}}
+Content-Type: {{json}}
+
+{ "description": "Más de 15 años en el rubro." }
 
 ### Edit it (the fantasy name can't change; email is the PUBLIC contact email)
 PATCH {{baseUrl}}/api/agencies/me
@@ -324,6 +333,9 @@ Origin: {{baseUrl}}
 
 ### Delete my agency
 DELETE {{baseUrl}}/api/agencies/me
+
+### The same with the id in the URL (403 if the id is not your agency)
+DELETE {{baseUrl}}/api/agencies/{{myAgencyId}}
 
 ###############################################################################
 # Not listed here: `/api/uploadthing` is the upload endpoint of UploadThing's

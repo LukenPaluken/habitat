@@ -3,9 +3,9 @@ import { eq } from "drizzle-orm";
 import { db } from "@/db";
 import { errorResponse } from "@/controllers/http";
 import { auth } from "@/lib/auth";
-import { ConflictError } from "@/lib/errors";
+import { ConflictError, ForbiddenError } from "@/lib/errors";
 import { registerSellerSchema } from "@/lib/validations/auth";
-import { account } from "@/models";
+import { account, user as userTable } from "@/models";
 import * as agencyService from "@/services/agency.service";
 import * as authService from "@/services/auth.service";
 import { cleanUp, createSeller, expectError, unique } from "./helpers";
@@ -39,16 +39,13 @@ describe("seller registration", () => {
     const { email } = await createSeller();
 
     const error = await expectError(
-      authService.registerSeller(
-        {
-          name: "Other",
-          email: email.toUpperCase(),
-          password: "password123",
-          fantasyName: unique("Other"),
-          description: "",
-        },
-        new Headers()
-      ),
+      authService.registerSeller({
+        name: "Other",
+        email: email.toUpperCase(),
+        password: "password123",
+        fantasyName: unique("Other"),
+        description: "",
+      }),
       ConflictError
     );
 
@@ -61,21 +58,35 @@ describe("seller registration", () => {
     const { agency } = await createSeller();
 
     const error = await expectError(
-      authService.registerSeller(
-        {
-          name: "Other",
-          email: `${unique("other")}@test.com`,
-          password: "password123",
-          fantasyName: agency.fantasyName,
-          description: "",
-        },
-        new Headers()
-      ),
+      authService.registerSeller({
+        name: "Other",
+        email: `${unique("other")}@test.com`,
+        password: "password123",
+        fantasyName: agency.fantasyName,
+        description: "",
+      }),
       ConflictError
     );
 
     expect(errorResponse(error).status).toBe(409);
     expect(error.details).toEqual({ field: "fantasyName" });
+  });
+
+  it("creates nothing when the agency can't be created (one transaction)", async () => {
+    // Both pass the "is the name free?" check; the database lets only one in.
+    const fantasyName = unique("Race");
+    const emails = [1, 2].map((n) => `${unique(`race${n}`)}@test.com`);
+    const results = await Promise.allSettled(
+      emails.map((email) => createSeller({ email, fantasyName }))
+    );
+
+    expect(results.filter((r) => r.status === "fulfilled")).toHaveLength(1);
+    const users = await Promise.all(
+      emails.map((email) =>
+        db.query.user.findFirst({ where: eq(userTable.email, email) })
+      )
+    );
+    expect(users.filter(Boolean)).toHaveLength(1);
   });
 
   it("does not need a phone number (it is optional)", async () => {
@@ -133,5 +144,25 @@ describe("the public agency profile", () => {
 
     expect(Object.keys(page.agency)).not.toContain("userId");
     expect(page.agency.fantasyName).toBe(agency.fantasyName);
+  });
+
+  it("can only be edited or deleted by its owner (403)", async () => {
+    const { agency } = await createSeller();
+    const { agency: other } = await createSeller();
+
+    const edit = await expectError(
+      agencyService.updateById(other.id, agency.id, { description: "x" }),
+      ForbiddenError
+    );
+    expect(errorResponse(edit).status).toBe(403);
+    await expectError(
+      agencyService.deleteById(other.id, agency.id),
+      ForbiddenError
+    );
+
+    const updated = await agencyService.updateById(agency.id, agency.id, {
+      description: "Nueva descripción",
+    });
+    expect(updated.description).toBe("Nueva descripción");
   });
 });

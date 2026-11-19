@@ -27,16 +27,20 @@ const VISIT_TRANSITIONS: Record<VisitRequestStatus, VisitRequestStatus[]> = {
 export async function request(propertyId: string, input: RequestVisitInput) {
   const property = await propertyRepository.findById(propertyId);
   if (!property || property.status === "BORRADOR") {
-    throw new NotFoundError("Property not found");
+    throw new NotFoundError("No encontramos la propiedad.");
   }
 
   // Paused, reserved, sold... properties can't be visited.
   if (property.status !== "PUBLICADA") {
-    throw new ConflictError("This property is not accepting visit requests");
+    throw new ConflictError(
+      "Esta propiedad no está recibiendo solicitudes de visita."
+    );
   }
 
   if (input.proposedDate.getTime() <= Date.now()) {
-    throw new ValidationError("proposedDate must be in the future");
+    throw new ValidationError("La fecha propuesta tiene que ser futura.", {
+      field: "proposedDate",
+    });
   }
 
   return withTransaction(async (tx) => {
@@ -68,7 +72,7 @@ export async function request(propertyId: string, input: RequestVisitInput) {
 
 export function listReceived(
   agencyId: string,
-  filters: { status?: VisitRequestStatus },
+  filters: { status?: VisitRequestStatus; propertyId?: string },
   pagination: PaginationParams
 ) {
   return visitRepository.listByAgency(agencyId, filters, pagination);
@@ -80,16 +84,16 @@ export async function changeStatus(
   newStatus: VisitRequestStatus
 ) {
   const visit = await visitRepository.findByIdWithProperty(visitId);
-  if (!visit) throw new NotFoundError("Visit request not found");
+  if (!visit) throw new NotFoundError("No encontramos la solicitud de visita.");
   if (visit.property.agencyId !== agencyId) {
-    throw new ForbiddenError("Not your property");
+    throw new ForbiddenError("Esta propiedad no es de tu inmobiliaria.");
   }
 
   const allowed = VISIT_TRANSITIONS[visit.status];
   if (!allowed.includes(newStatus)) {
     throw new ConflictError(
-      `Cannot change a ${visit.status} visit request to ${newStatus}. ` +
-        `Allowed: ${allowed.join(", ") || "none (final state)"}`
+      `Una visita ${visit.status.toLowerCase()} no puede pasar a ${newStatus.toLowerCase()}. ` +
+        `Opciones válidas: ${allowed.join(", ").toLowerCase() || "ninguna (es un estado final)"}.`
     );
   }
 
@@ -100,7 +104,7 @@ export async function changeStatus(
     newStatus
   );
   if (!updated) {
-    throw new ConflictError("This visit request was already answered");
+    throw new ConflictError("Esta solicitud de visita ya fue respondida.");
   }
   return updated;
 }

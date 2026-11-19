@@ -27,7 +27,7 @@ export const createPropertySchema = z.object({
     .union([z.string(), z.number()])
     .transform((val) => String(val))
     .refine((val) => parseFloat(val) > 0, {
-      message: "Price must be greater than 0",
+      message: "El precio tiene que ser mayor a 0.",
     }),
   currency: currencySchema.default("USD"),
   totalArea: z.coerce.number().int().positive().optional().nullable(),
@@ -48,7 +48,7 @@ export const updatePropertySchema = createPropertySchema
   .partial()
   .strict()
   .refine((patch) => Object.keys(patch).length > 0, {
-    message: "At least one field is required",
+    message: "Mandá al menos un campo para modificar.",
   });
 
 export const updatePropertyStatusSchema = z.object({

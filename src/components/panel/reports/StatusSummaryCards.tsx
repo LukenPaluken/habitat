@@ -7,8 +7,9 @@ import { STATUS_LABELS } from "@/lib/property-options";
 import { ErrorState, LoadingState } from "@/components/ui/States";
 import type { PropertyStatus } from "@/types/api";
 
-// The order the seller reads them in, from "live" to "closed".
+// The order the seller reads them in, from "not out yet" to "live" to "closed".
 const ORDER: PropertyStatus[] = [
+  "BORRADOR",
   "PUBLICADA",
   "RESERVADA",
   "VENDIDA",
@@ -36,7 +37,7 @@ export function StatusSummaryCards() {
       ) : !data || isLoading ? (
         <LoadingState label="Cargando…" className="py-6" />
       ) : (
-        <ul className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
+        <ul className="grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-7">
           {ORDER.map((status) => (
             <li
               key={status}

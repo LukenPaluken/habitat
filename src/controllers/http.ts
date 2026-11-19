@@ -9,6 +9,9 @@ import {
 } from "@/lib/errors";
 import { totalPagesOf, type Paginated } from "@/lib/pagination";
 import { uuidSchema } from "@/lib/validations/common";
+// Importing it also installs the Spanish messages: every schema is parsed in a
+// controller, and all of them import this file.
+import { describeIssue } from "@/lib/validations/error-map";
 
 // CONTROLLER layer plumbing: everything that is about HTTP lives here and in
 // the `*.controller.ts` files. Services and repositories never see a Request,
@@ -39,6 +42,12 @@ export function handler<TParams = Record<string, never>>(
   };
 }
 
+// "Revisá los datos: Precio: Tiene que ser mayor a 0. ..." (the first three).
+function summarize(error: ZodError): string {
+  const problems = error.issues.slice(0, 3).map(describeIssue);
+  return `Revisá los datos: ${problems.join(" ")}`;
+}
+
 // 23505 = PostgreSQL unique_violation (e.g. two sellers racing for one name).
 function isUniqueViolation(error: unknown): boolean {
   const code = (error as { code?: unknown } | null)?.code;
@@ -50,7 +59,7 @@ function isUniqueViolation(error: unknown): boolean {
 export function errorResponse(error: unknown): NextResponse {
   if (error instanceof ZodError) {
     return NextResponse.json(
-      { error: "Validation failed", details: error.issues },
+      { error: summarize(error), details: error.issues },
       { status: 400 }
     );
   }
@@ -77,14 +86,17 @@ export function errorResponse(error: unknown): NextResponse {
   }
   if (isUniqueViolation(error)) {
     return NextResponse.json(
-      { error: "The resource already exists" },
+      { error: "Ya existe un registro con esos datos." },
       { status: 409 }
     );
   }
 
   // Unknown failure: log it, but never leak internals to the client.
   console.error("Unhandled error:", error);
-  return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+  return NextResponse.json(
+    { error: "Error interno del servidor." },
+    { status: 500 }
+  );
 }
 
 // --- responses ----------------------------------------------------------------
@@ -130,7 +142,9 @@ export async function readJson(request: Request): Promise<unknown> {
   try {
     return await request.json();
   } catch {
-    throw new ValidationError("The request body must be valid JSON");
+    throw new ValidationError(
+      "El cuerpo del pedido tiene que ser un JSON válido."
+    );
   }
 }
 
@@ -147,7 +161,7 @@ export function queryValuesOf(request: Request, key: string): string[] {
 export function uuidParam(value: string, name = "id"): string {
   const parsed = uuidSchema.safeParse(value);
   if (!parsed.success) {
-    throw new ValidationError(`Invalid ${name}`);
+    throw new ValidationError("Identificador inválido.", { field: name });
   }
   return parsed.data;
 }

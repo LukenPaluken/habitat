@@ -86,7 +86,7 @@ export function byText(text: string, listing: Listing) {
 
 export async function byAgency(agencyId: string, listing: Listing) {
   const agency = await agencyRepository.findById(agencyId);
-  if (!agency) throw new NotFoundError("Agency not found");
+  if (!agency) throw new NotFoundError("No encontramos la inmobiliaria.");
   return listPublished({ agencyId }, listing);
 }
 

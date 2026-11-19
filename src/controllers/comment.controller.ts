@@ -47,16 +47,16 @@ export const reply = handler<{ id: string }>(async (request, { params }) => {
   return ok(await commentService.reply(agency.id, commentId, sellerReply));
 });
 
-// GET /api/agencies/me/comments?unanswered=true  ("Consultas" screen)
+// GET /api/agencies/me/comments?unanswered=true&propertyId=  ("Consultas" screen)
 export const listReceived = handler(async (request) => {
   const { agency } = await requireAgency();
-  const { unanswered, ...pagination } = myCommentsQuerySchema.parse(
+  const { unanswered, propertyId, ...pagination } = myCommentsQuerySchema.parse(
     queryOf(request)
   );
 
   const { page, unanswered: pending } = await commentService.listReceived(
     agency.id,
-    { unansweredOnly: unanswered },
+    { unansweredOnly: unanswered, propertyId },
     pagination
   );
   return paginated(page, { unanswered: pending });

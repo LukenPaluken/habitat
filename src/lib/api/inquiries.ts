@@ -10,11 +10,12 @@ export interface ReceivedCommentsResponse extends PaginatedResponse<ReceivedComm
 export const receivedCommentsUrl = (
   onlyPending: boolean,
   page: number,
-  limit: number
+  limit: number,
+  propertyId?: string
 ) =>
   `/api/agencies/me/comments?page=${page}&limit=${limit}${
     onlyPending ? "&unanswered=true" : ""
-  }`;
+  }${propertyId ? `&propertyId=${propertyId}` : ""}`;
 
 export const replyToComment = (commentId: string, sellerReply: string) =>
   post<ReceivedComment>(`/api/comments/${commentId}/reply`, { sellerReply });

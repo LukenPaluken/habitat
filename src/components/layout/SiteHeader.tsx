@@ -4,8 +4,9 @@ import { Building2, LayoutDashboard, LogOut } from "lucide-react";
 import Link from "next/link";
 import { buttonStyles } from "@/components/ui/Button";
 import { useAuth } from "@/hooks/useAuth";
+import { HeaderSearch } from "./HeaderSearch";
 
-/** Logo on the left; on the right, the way into (or out of) the seller's panel. */
+/** Logo on the left, the search in the middle; on the right, the way into (or out of) the seller's panel. */
 export function SiteHeader() {
   const { user, isLoading, logout } = useAuth();
 
@@ -19,6 +20,10 @@ export function SiteHeader() {
           <Building2 aria-hidden className="size-6 text-brand-600" />
           Habitat
         </Link>
+
+        <div className="flex flex-1 items-center justify-end gap-2 sm:justify-center">
+          <HeaderSearch />
+        </div>
 
         {/* Nothing until the session is known: no flash of the wrong button. */}
         {!isLoading &&
