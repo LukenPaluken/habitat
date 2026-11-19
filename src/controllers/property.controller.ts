@@ -69,3 +69,11 @@ export const listOwn = handler(async (request) => {
     await propertyService.listOwn(agency.id, { status }, listing)
   );
 });
+
+// GET /api/properties/:id/status-history  (the owner's audit log, oldest first)
+export const statusHistory = handler<IdParams>(async (_request, { params }) => {
+  const id = uuidParam((await params).id);
+  const { agency } = await requireAgency();
+
+  return ok(await propertyService.getStatusHistory(agency.id, id));
+});

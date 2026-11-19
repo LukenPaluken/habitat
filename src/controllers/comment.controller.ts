@@ -4,6 +4,7 @@ import {
   myCommentsQuerySchema,
   replyCommentSchema,
 } from "@/lib/validations/comment";
+import { paginationQuerySchema } from "@/lib/validations/common";
 import * as commentService from "@/services/comment.service";
 import {
   created,
@@ -24,6 +25,18 @@ export const ask = handler<{ id: string }>(async (request, { params }) => {
 
   return created(await commentService.ask(propertyId, input));
 });
+
+// GET /api/properties/:id/comments  (public, paginated, with the replies)
+export const listForProperty = handler<{ id: string }>(
+  async (request, { params }) => {
+    const propertyId = uuidParam((await params).id);
+    const pagination = paginationQuerySchema.parse(queryOf(request));
+
+    return paginated(
+      await commentService.listForProperty(propertyId, pagination)
+    );
+  }
+);
 
 // POST /api/comments/:id/reply
 export const reply = handler<{ id: string }>(async (request, { params }) => {

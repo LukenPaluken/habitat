@@ -1,7 +1,13 @@
-export default function Home() {
+import { Suspense } from "react";
+import { PropertyGridSkeleton } from "@/components/properties/PropertyGrid";
+import { PropertyListing } from "@/components/properties/PropertyListing";
+
+// Home: the public property listing. Its state lives in the URL query
+// (`useSearchParams`), which Next needs wrapped in <Suspense>.
+export default function HomePage() {
   return (
-    <main>
-      <h1>Habitat API Running</h1>
-    </main>
+    <Suspense fallback={<PropertyGridSkeleton />}>
+      <PropertyListing />
+    </Suspense>
   );
 }

@@ -6,6 +6,9 @@ export const updateAgencySchema = z
   .object({
     description: z.string().trim().min(1, "La descripción es requerida"),
     logoUrl: z.string().url("URL de logo inválida").nullable(),
+    // The PUBLIC contact email. It starts as the login email (sign-up asks for
+    // one email only) and can be changed so the account's stays private.
+    email: z.string().trim().email("Formato de email inválido"),
     phone: z
       .string()
       .trim()

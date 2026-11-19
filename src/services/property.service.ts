@@ -9,6 +9,7 @@ import type {
   CreatePropertyInput,
   UpdatePropertyInput,
 } from "@/lib/validations/property";
+import { allowedTransitions, FROZEN_STATUSES } from "@/lib/property-lifecycle";
 import type { Property, PropertySort, PropertyStatus } from "@/models";
 import * as activityRepository from "@/repositories/activity.repository";
 import { withTransaction } from "@/repositories/executor";
@@ -19,31 +20,6 @@ import * as visitRepository from "@/repositories/visit-request.repository";
 // SERVICE layer: business rules for the lifecycle of a property. It knows
 // nothing about HTTP (no Request/Response) and nothing about SQL (it only talks
 // to repositories).
-
-// Property lifecycle. VENDIDA is only reachable from a Venta and ALQUILADA
-// from an Alquiler (see `allowedTransitions`).
-const STATUS_TRANSITIONS: Record<PropertyStatus, PropertyStatus[]> = {
-  BORRADOR: ["PUBLICADA"],
-  PUBLICADA: ["PAUSADA", "RESERVADA", "CANCELADA"],
-  PAUSADA: ["PUBLICADA", "CANCELADA"],
-  RESERVADA: ["VENDIDA", "ALQUILADA", "CANCELADA"],
-  VENDIDA: [],
-  ALQUILADA: [],
-  CANCELADA: [],
-};
-
-// Closed properties keep accepting comments but their data can't change.
-const FROZEN_STATUSES: PropertyStatus[] = ["VENDIDA", "ALQUILADA", "CANCELADA"];
-
-export function allowedTransitions(
-  property: Pick<Property, "status" | "operationType">
-): PropertyStatus[] {
-  return STATUS_TRANSITIONS[property.status].filter((next) => {
-    if (next === "VENDIDA") return property.operationType === "Venta";
-    if (next === "ALQUILADA") return property.operationType === "Alquiler";
-    return true;
-  });
-}
 
 type PhysicalAttributes = Pick<Property, "propertyType"> &
   Partial<
@@ -136,6 +112,12 @@ export async function listOwn(
   );
 }
 
+// The audit log of a property, oldest first. Only its agency can read it.
+export async function getStatusHistory(agencyId: string, propertyId: string) {
+  await getOwnedProperty(agencyId, propertyId);
+  return stateHistoryRepository.listByProperty(propertyId);
+}
+
 export async function update(
   agencyId: string,
   propertyId: string,
@@ -174,8 +156,10 @@ export async function changeStatus(
   const property = await getOwnedProperty(agencyId, propertyId);
 
   const allowed = allowedTransitions(property);
+  // An invalid move (e.g. BORRADOR -> VENDIDA) is a bad request: 400. Only the
+  // race below, where someone else changed the status first, is a 409.
   if (!allowed.includes(newStatus)) {
-    throw new ConflictError(
+    throw new ValidationError(
       `Cannot change status from ${property.status} to ${newStatus}. ` +
         `Allowed: ${allowed.join(", ") || "none (final state)"}`
     );
@@ -208,6 +192,8 @@ export async function changeStatus(
       {
         agencyId,
         type: "property_state_change",
+        propertyId,
+        referenceId: propertyId,
         content: `La propiedad "${property.title}" cambió su estado a ${newStatus}.`,
       },
       tx

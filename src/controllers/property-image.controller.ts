@@ -1,7 +1,10 @@
 import { requireAgency } from "@/lib/auth-helper";
-import { addImageSchema } from "@/lib/validations/property";
+import {
+  addImageSchema,
+  reorderImagesSchema,
+} from "@/lib/validations/property";
 import * as imageService from "@/services/property-image.service";
-import { created, handler, readJson, success, uuidParam } from "./http";
+import { created, handler, ok, readJson, success, uuidParam } from "./http";
 
 // CONTROLLER layer: HTTP for a property's gallery.
 
@@ -41,4 +44,13 @@ export const setCover = handler<ImageParams>(async (_request, { params }) => {
     uuidParam(imageId, "imageId")
   );
   return success();
+});
+
+// PUT /api/properties/:id/images/order  { imageIds: [...] }
+export const reorder = handler<PropertyParams>(async (request, { params }) => {
+  const propertyId = uuidParam((await params).id);
+  const { agency } = await requireAgency();
+  const { imageIds } = reorderImagesSchema.parse(await readJson(request));
+
+  return ok(await imageService.reorder(agency.id, propertyId, imageIds));
 });

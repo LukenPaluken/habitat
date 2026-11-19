@@ -25,10 +25,19 @@ function listPublished(filters: PropertyFilters, listing: Listing) {
   );
 }
 
-// --- no filter -------------------------------------------------------------
+// --- no filter / every filter at once ---------------------------------------
 
 export function listAll(listing: Listing) {
   return listPublished({}, listing);
+}
+
+// The Home page: any combination of the filters below, in one query. Only the
+// public-facing filters are accepted (never `statuses` or `agencyId`).
+export function searchPublished(
+  filters: Omit<PropertyFilters, "statuses" | "agencyId">,
+  listing: Listing
+) {
+  return listPublished(filters, listing);
 }
 
 // --- one endpoint per filter ----------------------------------------------

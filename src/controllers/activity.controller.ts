@@ -20,6 +20,12 @@ export const list = handler(async (request) => {
   return paginated(page, { unreadCount });
 });
 
+// GET /api/agencies/me/activities/unread-count  (the notifications badge)
+export const unreadCount = handler(async () => {
+  const { agency } = await requireAgency();
+  return ok(await activityService.unreadCount(agency.id));
+});
+
 // PATCH /api/agencies/me/activities/:id/read
 export const markRead = handler<{ id: string }>(
   async (_request, { params }) => {

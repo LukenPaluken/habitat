@@ -33,6 +33,7 @@ export async function create(agencyId: string, input: CreateReviewInput) {
       {
         agencyId,
         type: "new_review",
+        referenceId: review.id,
         content: `${input.authorName} dejó una reseña de ${input.rating} ${
           input.rating === 1 ? "estrella" : "estrellas"
         }.`,

@@ -11,7 +11,7 @@ export const agencies = pgTable("agencies", {
   userId: text("user_id")
     .notNull()
     .unique()
-    .references(() => user.id, { onDelete: "cascade" }),
+    .references(() => user.id, { onDelete: "cascade", onUpdate: "no action" }),
   fantasyName: text("fantasy_name").notNull().unique(),
   description: text("description").notNull(),
   logoUrl: text("logo_url"),

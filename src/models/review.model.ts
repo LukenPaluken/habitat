@@ -16,7 +16,10 @@ export const reviews = pgTable(
     id: uuid("id").defaultRandom().primaryKey(),
     agencyId: uuid("agency_id")
       .notNull()
-      .references(() => agencies.id, { onDelete: "cascade" }),
+      .references(() => agencies.id, {
+        onDelete: "cascade",
+        onUpdate: "no action",
+      }),
     authorName: text("author_name").notNull(),
     content: text("content").notNull(),
     rating: integer("rating").notNull(),

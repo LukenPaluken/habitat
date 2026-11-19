@@ -15,6 +15,13 @@
       "when": 1794606656110,
       "tag": "0001_better_auth_account_issuer",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1795044421922,
+      "tag": "0002_activity_origin_reference",
+      "breakpoints": true
     }
   ]
 }

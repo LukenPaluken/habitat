@@ -30,36 +30,56 @@ function lastMonths(now: Date, count: number): Date[] {
   });
 }
 
-export async function dashboard(agencyId: string, now: Date = new Date()) {
-  const months = lastMonths(now, MONTHS_SHOWN);
+// Properties per current status, every status present even with 0.
+export async function statusSummary(agencyId: string) {
+  const rows = await reportRepository.countPropertiesByStatus(agencyId);
 
-  const [statusRows, monthlyRows, averageDays] = await Promise.all([
-    reportRepository.countPropertiesByStatus(agencyId),
-    reportRepository.monthlyPublicationsAndClosings(agencyId, months[0]),
-    reportRepository.averageDaysOnMarket(agencyId),
-  ]);
-
-  const propertiesByStatus = Object.fromEntries(
+  return Object.fromEntries(
     REPORTED_STATUSES.map((status) => [
       status,
-      statusRows.find((row) => row.status === status)?.total ?? 0,
+      rows.find((row) => row.status === status)?.total ?? 0,
     ])
   ) as Record<PropertyStatus, number>;
+}
 
-  const monthly = months.map((date) => {
+// New publications and closed sales/rentals per month, over a continuous axis
+// of the last 12 months.
+export async function monthly(agencyId: string, now: Date = new Date()) {
+  const months = lastMonths(now, MONTHS_SHOWN);
+  const rows = await reportRepository.monthlyPublicationsAndClosings(
+    agencyId,
+    months[0]
+  );
+
+  return months.map((date) => {
     const key = monthKey(date);
-    const row = monthlyRows.find((r) => r.month === key);
+    const row = rows.find((r) => r.month === key);
     return {
       month: key,
       published: row?.published ?? 0,
       closed: row?.closed ?? 0,
     };
   });
+}
+
+// Days between the first PUBLICADA and the VENDIDA/ALQUILADA; `null` (not NaN,
+// not 0) while nothing has been sold or rented yet.
+export async function averageTimeOnMarket(agencyId: string) {
+  const days = await reportRepository.averageDaysOnMarket(agencyId);
+  return { averageDays: days === null ? null : Math.round(days * 10) / 10 };
+}
+
+// The three indicators together (the screen can also ask for each one alone).
+export async function dashboard(agencyId: string, now: Date = new Date()) {
+  const [propertiesByStatus, monthlyCounts, onMarket] = await Promise.all([
+    statusSummary(agencyId),
+    monthly(agencyId, now),
+    averageTimeOnMarket(agencyId),
+  ]);
 
   return {
     propertiesByStatus,
-    monthly,
-    averageDaysOnMarket:
-      averageDays === null ? null : Math.round(averageDays * 10) / 10,
+    monthly: monthlyCounts,
+    averageDaysOnMarket: onMarket.averageDays,
   };
 }

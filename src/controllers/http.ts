@@ -69,12 +69,17 @@ export function errorResponse(error: unknown): NextResponse {
   if (error instanceof NotFoundError) {
     return NextResponse.json({ error: error.message }, { status: 404 });
   }
-  if (error instanceof ConflictError || isUniqueViolation(error)) {
-    const message =
-      error instanceof ConflictError
-        ? error.message
-        : "The resource already exists";
-    return NextResponse.json({ error: message }, { status: 409 });
+  if (error instanceof ConflictError) {
+    return NextResponse.json(
+      { error: error.message, details: error.details },
+      { status: 409 }
+    );
+  }
+  if (isUniqueViolation(error)) {
+    return NextResponse.json(
+      { error: "The resource already exists" },
+      { status: 409 }
+    );
   }
 
   // Unknown failure: log it, but never leak internals to the client.

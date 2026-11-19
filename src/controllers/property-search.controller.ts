@@ -1,5 +1,6 @@
 import { z } from "zod";
 import {
+  combinedSearchQuerySchema,
   listQuerySchema,
   minCountParam,
   neighborhoodParam,
@@ -18,8 +19,8 @@ import { handler, paginated, queryOf, queryValuesOf, uuidParam } from "./http";
 // two combos for the searches that repeat the most. Every endpoint is public,
 // only returns PUBLICADA properties and accepts `?page=&limit=&sort=`.
 //
-//   GET /api/properties                                   all
-//   GET /api/properties/type/:type                        Casa | Departamento | Terreno | Local
+//   GET /api/properties                                   all, or any combination of filters
+//   GET /api/properties/type/:type                       Casa | Departamento | Terreno | Local
 //   GET /api/properties/operation/:operation              Venta | Alquiler
 //   GET /api/properties/neighborhood/:neighborhood        contains, case-insensitive
 //   GET /api/properties/price?currency=&min=&max=
@@ -35,9 +36,31 @@ import { handler, paginated, queryOf, queryValuesOf, uuidParam } from "./http";
 
 const listing = (request: Request) => listQuerySchema.parse(queryOf(request));
 
-export const listAll = handler(async (request) =>
-  paginated(await searchService.listAll(listing(request)))
-);
+// GET /api/properties: everything published, optionally narrowed by ANY
+// combination of filters (the Home page). With no filter it is a plain listing.
+export const listAll = handler(async (request) => {
+  const { page, limit, sort, tag, ...query } = combinedSearchQuerySchema.parse({
+    ...queryOf(request),
+    tag: queryValuesOf(request, "tag"),
+  });
+
+  return paginated(
+    await searchService.searchPublished(
+      {
+        propertyType: query.type,
+        operationType: query.operation,
+        text: query.q,
+        neighborhood: query.neighborhood,
+        currency: query.currency,
+        minPrice: query.minPrice,
+        maxPrice: query.maxPrice,
+        minRooms: query.rooms,
+        tags: tag,
+      },
+      { page, limit, sort }
+    )
+  );
+});
 
 export const byType = handler<{ type: string }>(async (request, { params }) => {
   const type = typeParam.parse((await params).type);

@@ -16,7 +16,10 @@ export const propertyImages = pgTable(
     id: uuid("id").defaultRandom().primaryKey(),
     propertyId: uuid("property_id")
       .notNull()
-      .references(() => properties.id, { onDelete: "cascade" }),
+      .references(() => properties.id, {
+        onDelete: "cascade",
+        onUpdate: "no action",
+      }),
     imageUrl: text("image_url").notNull(),
     order: integer("order").default(0).notNull(),
     isCover: boolean("is_cover").default(false).notNull(),

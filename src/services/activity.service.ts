@@ -17,6 +17,11 @@ export async function list(
   return { page, unreadCount };
 }
 
+// For the badge in the navigation: cheap, no list attached.
+export async function unreadCount(agencyId: string) {
+  return { unreadCount: await activityRepository.countUnread(agencyId) };
+}
+
 export async function markRead(agencyId: string, activityId: string) {
   const activity = await activityRepository.findById(activityId);
   if (!activity) throw new NotFoundError("Activity not found");

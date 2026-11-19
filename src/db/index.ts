@@ -15,6 +15,13 @@ const conn =
   globalForDb.conn ??
   postgres(connectionString, {
     max: process.env.NODE_ENV === "production" ? 20 : 5,
+    // Every date column is a `timestamp` WITHOUT time zone: Drizzle writes and
+    // reads those as UTC, but `defaultNow()` is evaluated by Postgres in the
+    // SESSION time zone. On a server that isn't in UTC (a laptop in Buenos
+    // Aires, for instance) the two disagree and every `createdAt` comes out
+    // shifted by the UTC offset ("hace 3 horas" for something sent just now).
+    // Pinning the session to UTC makes both sides agree, wherever it runs.
+    connection: { TimeZone: "UTC" },
   });
 
 if (process.env.NODE_ENV !== "production") {

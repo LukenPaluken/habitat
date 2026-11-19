@@ -8,7 +8,10 @@ export const visitRequests = pgTable(
     id: uuid("id").defaultRandom().primaryKey(),
     propertyId: uuid("property_id")
       .notNull()
-      .references(() => properties.id, { onDelete: "cascade" }),
+      .references(() => properties.id, {
+        onDelete: "cascade",
+        onUpdate: "no action",
+      }),
     requesterName: text("requester_name").notNull(),
     requesterPhone: text("requester_phone").notNull(),
     proposedDate: timestamp("proposed_date").notNull(),

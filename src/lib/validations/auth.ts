@@ -8,9 +8,13 @@ export const registerSellerSchema = z.object({
   fantasyName: z
     .string()
     .min(2, "El nombre de fantasía debe tener al menos 2 caracteres"),
+  // Optional at sign-up; the seller can add it later from "Mi inmobiliaria".
   phone: z
     .string()
-    .min(6, "El teléfono de contacto debe tener al menos 6 caracteres"),
+    .trim()
+    .min(6, "El teléfono de contacto debe tener al menos 6 caracteres")
+    .optional()
+    .or(z.literal("")),
   description: z.string().optional().default(""),
   address: z.string().optional(),
   logoUrl: z.string().url("URL de logo inválida").optional().or(z.literal("")),
