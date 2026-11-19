@@ -5,8 +5,8 @@ export interface Group<T> {
 }
 
 /**
- * Splits a list into groups (the received visits and questions, "agrupadas por
- * propiedad") keeping the order in which each group first shows up.
+ * Splits a list into groups (the received visits and questions, grouped by
+ * property) keeping the order in which each group first shows up.
  */
 export function groupBy<T>(
   items: T[],
