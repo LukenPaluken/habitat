@@ -18,17 +18,26 @@ const ICONS: Record<ActivityType, LucideIcon> = {
   new_review: Star,
 };
 
-/** Where each kind of news lives: the screen where the seller can act on it. */
+/**
+ * Where the news came from: the question or the visit (in the panel screen
+ * where the seller answers it, narrowed to its property), the property itself
+ * or the review on the agency's site.
+ */
 export function activityHref(activity: Activity, agencyId: string): string {
+  const { propertyId, referenceId } = activity;
+  const onProperty = propertyId ? `?propiedad=${propertyId}` : "";
+  const anchor = (prefix: string) =>
+    referenceId ? `#${prefix}-${referenceId}` : "";
+
   switch (activity.type) {
     case "new_comment":
-      return "/panel/consultas";
+      return `/panel/consultas${onProperty}${anchor("consulta")}`;
     case "new_visit":
-      return "/panel/visitas";
+      return `/panel/visitas${onProperty}${anchor("visita")}`;
     case "property_state_change":
-      return "/panel/propiedades";
+      return propertyId ? `/propiedades/${propertyId}` : "/panel/propiedades";
     case "new_review":
-      return `/inmobiliarias/${agencyId}`;
+      return `/inmobiliarias/${agencyId}${anchor("resena")}`;
   }
 }
 

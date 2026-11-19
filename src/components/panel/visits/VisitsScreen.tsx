@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/Button";
 import { Pagination } from "@/components/ui/Pagination";
 import { EmptyState, ErrorState, LoadingState } from "@/components/ui/States";
 import { useFetch } from "@/hooks/useFetch";
+import { useHashTarget } from "@/hooks/useHashTarget";
 import {
   receivedVisitsUrl,
   type ReceivedVisitsResponse,
@@ -15,17 +16,22 @@ import { VISIT_FILTERS } from "@/lib/visit-actions";
 import { cn } from "@/lib/utils";
 import type { VisitStatus } from "@/types/api";
 import { PageHeader } from "../PageHeader";
+import { PropertyScope } from "../PropertyScope";
 import { VisitCard } from "./VisitCard";
 
 const PAGE_SIZE = 20;
 
 /** The visits people asked for, grouped by property, to confirm or reject. */
-export function VisitsScreen() {
-  const [status, setStatus] = useState<VisitStatus | "">("Pendiente");
+export function VisitsScreen({ propertyId }: { propertyId?: string }) {
+  // Coming from the feed, the visit may not be pending anymore: show them all.
+  const [status, setStatus] = useState<VisitStatus | "">(
+    propertyId ? "" : "Pendiente"
+  );
   const [page, setPage] = useState(1);
   const { data, error, isLoading, reload } = useFetch<ReceivedVisitsResponse>(
-    receivedVisitsUrl(status, page, PAGE_SIZE)
+    receivedVisitsUrl(status, page, PAGE_SIZE, propertyId)
   );
+  const targetId = useHashTarget(Boolean(data));
 
   const groups = data
     ? groupBy(
@@ -41,6 +47,10 @@ export function VisitsScreen() {
         title="Solicitudes de visita"
         description="Quien pide una visita deja su teléfono: llamalo o escribile para coordinar."
       />
+
+      {propertyId && (
+        <PropertyScope title={groups[0]?.title} clearHref="/panel/visitas" />
+      )}
 
       <div
         role="group"
@@ -97,7 +107,12 @@ export function VisitsScreen() {
               </h2>
               <ul className="grid gap-3 md:grid-cols-2">
                 {group.items.map((visit) => (
-                  <VisitCard key={visit.id} visit={visit} onChanged={reload} />
+                  <VisitCard
+                    key={visit.id}
+                    visit={visit}
+                    highlighted={targetId === `visita-${visit.id}`}
+                    onChanged={reload}
+                  />
                 ))}
               </ul>
             </section>

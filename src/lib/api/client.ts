@@ -4,8 +4,8 @@ import type { ApiResponse } from "@/types/api";
 // what a failure looks like and what to do when the session is gone (401). The
 // calls themselves live next to this file, grouped by resource.
 
-// The API answers in English; people read Spanish. Failures are translated here,
-// once, by status code.
+// What to say when the server didn't explain itself (offline, a crash, a
+// session that expired): one message per status code.
 function messageFor(status: number): string {
   switch (status) {
     case 0:
@@ -29,36 +29,34 @@ export class ApiError extends Error {
   constructor(
     /** HTTP status; 0 when the request never got an answer (offline...). */
     readonly status: number,
-    /** What the server said, untranslated. For debugging, not for the screen. */
+    /** What the server said. */
     readonly serverMessage?: string,
     /** Names of the fields the server found at fault (400/409), e.g. `proposedDate`. */
-    readonly invalidFields: string[] = []
+    readonly invalidFields: string[] = [],
+    /** True when `serverMessage` is meant for people and is what `message` shows. */
+    readonly fromServer = false
   ) {
-    super(messageFor(status));
+    super(fromServer && serverMessage ? serverMessage : messageFor(status));
     this.name = "ApiError";
   }
 }
 
-// Which fields did a 400 complain about? Zod issues carry their `path`; the
-// domain's own errors start with the field name ("proposedDate must be...").
+// The API explains its 400/403/404/409 in Spanish, for whoever is using the
+// screen, so those reach them as they are. 401 and 5xx keep the generic text.
+const EXPLAINED_STATUSES = [400, 403, 404, 409];
+
+// Which fields did a 400/409 complain about? Zod issues carry their `path`; the
+// domain's own errors name it as `details: { field }`.
 function invalidFieldsOf(body: unknown): string[] {
-  const { error, details } = (body ?? {}) as {
-    error?: unknown;
-    details?: unknown;
-  };
+  const { details } = (body ?? {}) as { details?: unknown };
   const fromIssues = Array.isArray(details)
     ? details.map((issue) => String(issue?.path?.[0] ?? ""))
     : [];
-  // A 409 names its culprit as `details: { field: "email" }`.
   const fromField =
     details && typeof details === "object" && "field" in details
       ? [String((details as { field: unknown }).field)]
       : [];
-  const fromMessage =
-    typeof error === "string" ? (/^([A-Za-z]+) /.exec(error)?.[1] ?? "") : "";
-  return [
-    ...new Set([...fromIssues, ...fromField, fromMessage].filter(Boolean)),
-  ];
+  return [...new Set([...fromIssues, ...fromField].filter(Boolean))];
 }
 
 export function isAbortError(error: unknown): boolean {
@@ -84,7 +82,8 @@ async function request<T>(url: string, init: RequestInit = {}): Promise<T> {
     throw new ApiError(
       response.status,
       typeof body?.error === "string" ? body.error : undefined,
-      invalidFieldsOf(body)
+      invalidFieldsOf(body),
+      EXPLAINED_STATUSES.includes(response.status)
     );
   }
   return body as T;
@@ -125,7 +124,7 @@ export const put = <T>(url: string, body?: unknown) =>
   send<T>("PUT", url, body);
 export const del = (url: string) => request<unknown>(url, { method: "DELETE" });
 
-/** `error.message`, or `text` when the API answered 409 (a state conflict). */
+/** `error.message`, or `text` for a 409 (a state conflict) the API didn't explain. */
 export function onConflict(error: ApiError, text: string): string {
-  return error.status === 409 ? text : error.message;
+  return error.status === 409 && !error.fromServer ? text : error.message;
 }

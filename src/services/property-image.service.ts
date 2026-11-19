@@ -9,7 +9,7 @@ import * as propertyService from "./property.service";
 
 async function getImageOfProperty(propertyId: string, imageId: string) {
   const image = await imageRepository.findByIdInProperty(imageId, propertyId);
-  if (!image) throw new NotFoundError("Image not found");
+  if (!image) throw new NotFoundError("No encontramos la foto.");
   return image;
 }
 
@@ -84,7 +84,8 @@ export async function reorder(
       imageIds.every((id) => currentIds.has(id));
     if (!sameSet) {
       throw new ValidationError(
-        "imageIds must list every image of the property exactly once"
+        "El nuevo orden tiene que incluir cada foto de la propiedad una sola vez.",
+        { field: "imageIds" }
       );
     }
 

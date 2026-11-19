@@ -54,10 +54,10 @@ export const priceQuerySchema = z
     max: z.coerce.number().positive().optional(),
   })
   .refine((q) => q.min !== undefined || q.max !== undefined, {
-    message: "Provide at least one of min or max",
+    message: "Indicá un precio mínimo o máximo.",
   })
   .refine((q) => q.min === undefined || q.max === undefined || q.min <= q.max, {
-    message: "min cannot be greater than max",
+    message: "El mínimo no puede ser mayor que el máximo.",
   });
 
 // The Home page combines several filters at once, so `GET /api/properties`
@@ -88,14 +88,14 @@ export const combinedSearchQuerySchema = listQuerySchema
     (q) =>
       (q.minPrice === undefined && q.maxPrice === undefined) ||
       q.currency !== undefined,
-    { message: "currency is required when minPrice or maxPrice is given" }
+    { message: "Para filtrar por precio indicá la moneda." }
   )
   .refine(
     (q) =>
       q.minPrice === undefined ||
       q.maxPrice === undefined ||
       q.minPrice <= q.maxPrice,
-    { message: "minPrice cannot be greater than maxPrice" }
+    { message: "El precio mínimo no puede ser mayor que el máximo." }
   );
 
 // Agency's own properties: any status, optionally narrowed to one.

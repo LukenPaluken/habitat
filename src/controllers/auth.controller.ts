@@ -9,10 +9,7 @@ import { handler, readJson } from "./http";
 export const registerSeller = handler(async (request) => {
   const input = registerSellerSchema.parse(await readJson(request));
 
-  const { user, agency } = await authService.registerSeller(
-    input,
-    request.headers
-  );
+  const { user, agency } = await authService.registerSeller(input);
 
   // Keeps the response shape this endpoint already had.
   return NextResponse.json({ success: true, user, agency }, { status: 201 });

@@ -4,7 +4,7 @@ import { DEFAULT_PAGE_SIZE, MAX_PAGE_SIZE } from "@/lib/pagination";
 // Input schemas (DTOs) are validated by the controller BEFORE calling a service,
 // so services only ever receive well-shaped data and enforce business rules.
 
-export const uuidSchema = z.string().uuid("Invalid id");
+export const uuidSchema = z.string().uuid("Identificador inválido.");
 
 // `?page=2&limit=20`. `page` starts at 1 and `limit` is capped (not rejected).
 export const paginationQuerySchema = z.object({
@@ -28,7 +28,7 @@ export function caseInsensitiveEnum<
     if (!match) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
-        message: `Must be one of: ${values.join(", ")}`,
+        message: `Tiene que ser uno de: ${values.join(", ")}.`,
       });
       return z.NEVER;
     }

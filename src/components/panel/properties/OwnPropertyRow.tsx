@@ -50,12 +50,9 @@ export function OwnPropertyRow({
     change.reset();
   }
 
-  // The API refuses an invalid move with a 400, and a lost race with a 409: both
-  // mean "that change is not possible right now".
-  const refused = change.error?.status === 400 || change.error?.status === 409;
-  const refusal = refused
-    ? "El estado de la propiedad no permite ese cambio ahora mismo."
-    : change.error?.message;
+  // The API refuses an invalid move with a 400 and a lost race with a 409, and
+  // says why: that reason is what the seller reads.
+  const refusal = change.error?.message;
 
   return (
     <li className="space-y-3 rounded-xl border border-slate-200 bg-white p-4">

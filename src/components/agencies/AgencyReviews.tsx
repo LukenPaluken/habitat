@@ -3,6 +3,7 @@ import { useState } from "react";
 import { Pagination } from "@/components/ui/Pagination";
 import { EmptyState, ErrorState, LoadingState } from "@/components/ui/States";
 import { useAgencyReviews } from "@/hooks/useAgencies";
+import { useHashTarget } from "@/hooks/useHashTarget";
 import { cn } from "@/lib/utils";
 import { ReviewForm } from "./ReviewForm";
 import { ReviewItem } from "./ReviewItem";
@@ -22,6 +23,7 @@ export function AgencyReviews({
     agencyId,
     page
   );
+  const targetId = useHashTarget(Boolean(reviews));
 
   function handlePosted() {
     setPage(1); // the newest review is on the first page
@@ -61,7 +63,11 @@ export function AgencyReviews({
         >
           <ul className="space-y-3">
             {reviews.map((review) => (
-              <ReviewItem key={review.id} review={review} />
+              <ReviewItem
+                key={review.id}
+                review={review}
+                highlighted={targetId === `resena-${review.id}`}
+              />
             ))}
           </ul>
           <Pagination

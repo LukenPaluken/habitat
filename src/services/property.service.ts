@@ -29,18 +29,22 @@ type PhysicalAttributes = Pick<Property, "propertyType"> &
     >
   >;
 
+const LAND_FIELD_LABELS = {
+  rooms: "ambientes",
+  bedrooms: "dormitorios",
+  bathrooms: "baños",
+  coveredArea: "superficie cubierta",
+} as const;
+
 // Rules that involve several fields at once, so they can't live in a Zod
 // field schema (and must also hold after merging a partial update).
 function assertPropertyRules(property: PhysicalAttributes): void {
   if (property.propertyType === "Terreno") {
-    for (const field of [
-      "rooms",
-      "bedrooms",
-      "bathrooms",
-      "coveredArea",
-    ] as const) {
-      if (property[field] != null) {
-        throw new ValidationError(`A Terreno cannot have ${field}`);
+    for (const [field, label] of Object.entries(LAND_FIELD_LABELS)) {
+      if (property[field as keyof typeof LAND_FIELD_LABELS] != null) {
+        throw new ValidationError(`Un terreno no puede tener ${label}.`, {
+          field,
+        });
       }
     }
   }
@@ -50,7 +54,10 @@ function assertPropertyRules(property: PhysicalAttributes): void {
     property.totalArea != null &&
     property.coveredArea > property.totalArea
   ) {
-    throw new ValidationError("coveredArea cannot be greater than totalArea");
+    throw new ValidationError(
+      "La superficie cubierta no puede ser mayor que la superficie total.",
+      { field: "coveredArea" }
+    );
   }
 }
 
@@ -61,9 +68,9 @@ export async function getOwnedProperty(
   propertyId: string
 ): Promise<Property> {
   const property = await propertyRepository.findById(propertyId);
-  if (!property) throw new NotFoundError("Property not found");
+  if (!property) throw new NotFoundError("No encontramos la propiedad.");
   if (property.agencyId !== agencyId) {
-    throw new ForbiddenError("Not your property");
+    throw new ForbiddenError("Esta propiedad no es de tu inmobiliaria.");
   }
   return property;
 }
@@ -96,7 +103,8 @@ export async function getDetail(propertyId: string, viewerAgencyId?: string) {
   const hidden =
     property?.status === "BORRADOR" && property.agencyId !== viewerAgencyId;
 
-  if (!property || hidden) throw new NotFoundError("Property not found");
+  if (!property || hidden)
+    throw new NotFoundError("No encontramos la propiedad.");
   return property;
 }
 
@@ -127,7 +135,7 @@ export async function update(
 
   if (FROZEN_STATUSES.includes(property.status)) {
     throw new ConflictError(
-      `A property that is ${property.status} can no longer be edited`
+      `Una propiedad ${property.status.toLowerCase()} ya no se puede editar.`
     );
   }
 
@@ -137,14 +145,14 @@ export async function update(
   );
   if (hasConfirmedVisits) {
     throw new ConflictError(
-      "Cannot edit a property that has confirmed visits pending"
+      "No se puede editar una propiedad que tiene visitas confirmadas pendientes."
     );
   }
 
   assertPropertyRules({ ...property, ...patch });
 
   const updated = await propertyRepository.update(propertyId, patch);
-  if (!updated) throw new NotFoundError("Property not found");
+  if (!updated) throw new NotFoundError("No encontramos la propiedad.");
   return updated;
 }
 
@@ -160,8 +168,8 @@ export async function changeStatus(
   // race below, where someone else changed the status first, is a 409.
   if (!allowed.includes(newStatus)) {
     throw new ValidationError(
-      `Cannot change status from ${property.status} to ${newStatus}. ` +
-        `Allowed: ${allowed.join(", ") || "none (final state)"}`
+      `No se puede pasar de ${property.status.toLowerCase()} a ${newStatus.toLowerCase()}. ` +
+        `Opciones válidas: ${allowed.join(", ").toLowerCase() || "ninguna (es un estado final)"}.`
     );
   }
 
@@ -175,7 +183,7 @@ export async function changeStatus(
     );
     if (!updated) {
       throw new ConflictError(
-        "The property status changed in the meantime, reload and try again"
+        "El estado de la propiedad cambió mientras tanto. Recargá e intentá de nuevo."
       );
     }
 
@@ -211,7 +219,7 @@ export async function removeDraft(agencyId: string, propertyId: string) {
 
   if (property.status !== "BORRADOR") {
     throw new ConflictError(
-      "Only drafts can be deleted. Use the CANCELADA status for the rest"
+      "Solo se pueden eliminar los borradores. Las demás propiedades se dan de baja."
     );
   }
 

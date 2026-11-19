@@ -15,21 +15,21 @@ export class ValidationError extends Error {
 }
 
 export class UnauthorizedError extends Error {
-  constructor(message = "Authentication required") {
+  constructor(message = "Tenés que iniciar sesión.") {
     super(message);
     this.name = "UnauthorizedError";
   }
 }
 
 export class ForbiddenError extends Error {
-  constructor(message = "You are not allowed to perform this action") {
+  constructor(message = "No tenés permiso para hacer esto.") {
     super(message);
     this.name = "ForbiddenError";
   }
 }
 
 export class NotFoundError extends Error {
-  constructor(message = "Resource not found") {
+  constructor(message = "No encontramos lo que buscás.") {
     super(message);
     this.name = "NotFoundError";
   }

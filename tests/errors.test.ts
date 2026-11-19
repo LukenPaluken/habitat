@@ -28,7 +28,7 @@ describe("how errors become HTTP answers", () => {
 
     expect(response.status).toBe(400);
     const body = await response.json();
-    expect(body.error).toBe("Validation failed");
+    expect(body.error).toMatch(/^Revisá los datos: Precio: /);
     expect(body.details[0].path).toEqual(["price"]);
   });
 
@@ -42,6 +42,6 @@ describe("how errors become HTTP answers", () => {
 
     expect(response.status).toBe(500);
     const text = JSON.stringify(await response.json());
-    expect(text).toBe('{"error":"Internal server error"}');
+    expect(text).toBe('{"error":"Error interno del servidor."}');
   });
 });

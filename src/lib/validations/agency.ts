@@ -18,7 +18,7 @@ export const updateAgencySchema = z
   .partial()
   .strict()
   .refine((patch) => Object.keys(patch).length > 0, {
-    message: "At least one field is required",
+    message: "Mandá al menos un campo para modificar.",
   });
 
 export type UpdateAgencyInput = z.infer<typeof updateAgencySchema>;

@@ -3,9 +3,20 @@
 // touch the development database.
 import postgres from "postgres";
 
+// Same server (and credentials) as the development database of `.env`, but
+// another database: `habitat` becomes `habitat_test`. TEST_DATABASE_URL wins.
+function testUrlFrom(databaseUrl: string): string {
+  const url = new URL(databaseUrl);
+  url.pathname = `/${url.pathname.slice(1) || "habitat"}_test`;
+  return url.toString();
+}
+
 const url =
   process.env.TEST_DATABASE_URL ??
-  "postgresql://postgres:postgres@localhost:5432/habitat_test";
+  testUrlFrom(
+    process.env.DATABASE_URL ??
+      "postgresql://postgres:postgres@localhost:5432/habitat"
+  );
 const databaseName = new URL(url).pathname.slice(1);
 
 // A typo in an env var must never wipe real data: tests only run on `*_test`.

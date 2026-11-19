@@ -116,6 +116,7 @@ describe("the reports", () => {
     const summary = await reportService.statusSummary(agency.id);
 
     expect(summary).toEqual({
+      BORRADOR: 1,
       PUBLICADA: 0,
       RESERVADA: 1,
       VENDIDA: 0,

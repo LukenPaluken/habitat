@@ -8,10 +8,13 @@ import { ReplyForm } from "./ReplyForm";
 /** A received question: answered ones show the reply, pending ones ask for it. */
 export function InquiryItem({
   comment,
+  highlighted = false,
   onReplied,
   onStale,
 }: {
   comment: ReceivedComment;
+  /** The one the seller came to see (from the activity feed). */
+  highlighted?: boolean;
   onReplied: (comment: ReceivedComment) => void;
   onStale: () => void;
 }) {
@@ -19,11 +22,13 @@ export function InquiryItem({
 
   return (
     <li
+      id={`consulta-${comment.id}`}
       className={cn(
-        "space-y-3 rounded-xl border border-l-4 bg-white p-4",
+        "scroll-mt-20 space-y-3 rounded-xl border border-l-4 bg-white p-4",
         answered
           ? "border-slate-200 border-l-brand-500"
-          : "border-slate-200 border-l-amber-500"
+          : "border-slate-200 border-l-amber-500",
+        highlighted && "ring-2 ring-brand-500 ring-offset-2"
       )}
     >
       <div className="space-y-1">

@@ -122,6 +122,7 @@ service function: the query itself is already built once in
 | Endpoint                                                       | What                                                                                               |
 | -------------------------------------------------------------- | -------------------------------------------------------------------------------------------------- |
 | `GET` · `PATCH` · `DELETE /api/agencies/me`                    | Own profile (`email` is the **public** contact email); delete only without `PUBLICADA`/`RESERVADA` |
+| `PUT` · `PATCH` · `DELETE /api/agencies/:id`                   | The same edit/delete with the id in the URL: `403` if it is not your agency                        |
 | `GET /api/agencies/me/properties?status=`                      | "Mis propiedades": every status                                                                    |
 | `POST /api/properties`                                         | Create (starts `BORRADOR` or `PUBLICADA`)                                                          |
 | `PATCH /api/properties/:id`                                    | Edit (blocked if closed or with `Confirmada` visits)                                               |

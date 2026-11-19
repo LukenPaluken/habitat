@@ -6,6 +6,7 @@ import * as reportRepository from "@/repositories/report.repository";
 // month axis, rounded numbers).
 
 const REPORTED_STATUSES: PropertyStatus[] = [
+  "BORRADOR",
   "PUBLICADA",
   "RESERVADA",
   "VENDIDA",

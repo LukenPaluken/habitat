@@ -19,18 +19,15 @@ export async function createSeller(
   overrides: Partial<Parameters<typeof authService.registerSeller>[0]> = {}
 ) {
   const email = overrides.email ?? `${unique("seller")}@test.com`;
-  const { user: account, agency } = await authService.registerSeller(
-    {
-      name: "Test Seller",
-      email,
-      password: "password123",
-      fantasyName: unique("Agency"),
-      phone: "011-5555-5555",
-      description: "",
-      ...overrides,
-    },
-    new Headers()
-  );
+  const { user: account, agency } = await authService.registerSeller({
+    name: "Test Seller",
+    email,
+    password: "password123",
+    fantasyName: unique("Agency"),
+    phone: "011-5555-5555",
+    description: "",
+    ...overrides,
+  });
   createdUsers.push(account.id);
   return { user: account, agency, email };
 }

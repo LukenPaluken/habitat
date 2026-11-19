@@ -24,13 +24,13 @@ export async function unreadCount(agencyId: string) {
 
 export async function markRead(agencyId: string, activityId: string) {
   const activity = await activityRepository.findById(activityId);
-  if (!activity) throw new NotFoundError("Activity not found");
+  if (!activity) throw new NotFoundError("No encontramos la actividad.");
   if (activity.agencyId !== agencyId) {
-    throw new ForbiddenError("Not your activity");
+    throw new ForbiddenError("Esta actividad no es de tu inmobiliaria.");
   }
 
   const updated = await activityRepository.markRead(activityId);
-  if (!updated) throw new NotFoundError("Activity not found");
+  if (!updated) throw new NotFoundError("No encontramos la actividad.");
   return updated;
 }
 

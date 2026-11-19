@@ -47,13 +47,14 @@ export async function setReply(
 // Every comment received on the agency's properties, newest first.
 export async function listByAgency(
   agencyId: string,
-  filters: { unansweredOnly?: boolean },
+  filters: { unansweredOnly?: boolean; propertyId?: string },
   pagination: PaginationParams,
   executor: DbExecutor = db
 ) {
   const where = and(
     eq(properties.agencyId, agencyId),
-    filters.unansweredOnly ? isNull(comments.sellerReply) : undefined
+    filters.unansweredOnly ? isNull(comments.sellerReply) : undefined,
+    filters.propertyId ? eq(comments.propertyId, filters.propertyId) : undefined
   );
 
   const [items, [{ total }]] = await Promise.all([

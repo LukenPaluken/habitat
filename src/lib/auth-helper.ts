@@ -44,7 +44,7 @@ export async function requireAgency(customHeaders?: Headers) {
   const agency = await agencyRepository.findByUserId(user.id);
 
   if (!agency) {
-    throw new ForbiddenError("The authenticated user has no agency");
+    throw new ForbiddenError("Tu cuenta no tiene una inmobiliaria asociada.");
   }
 
   return { user, agency };

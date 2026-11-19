@@ -1,4 +1,4 @@
-import { ConflictError, NotFoundError } from "@/lib/errors";
+import { ConflictError, ForbiddenError, NotFoundError } from "@/lib/errors";
 import type { UpdateAgencyInput } from "@/lib/validations/agency";
 import type { Agency, PropertyStatus } from "@/models";
 import * as agencyRepository from "@/repositories/agency.repository";
@@ -35,7 +35,7 @@ export function roundRating(average: number | null): number | null {
 
 async function getAgency(agencyId: string): Promise<Agency> {
   const agency = await agencyRepository.findById(agencyId);
-  if (!agency) throw new NotFoundError("Agency not found");
+  if (!agency) throw new NotFoundError("No encontramos la inmobiliaria.");
   return agency;
 }
 
@@ -45,7 +45,7 @@ export async function getOwn(agencyId: string) {
 
 export async function updateOwn(agencyId: string, patch: UpdateAgencyInput) {
   const updated = await agencyRepository.update(agencyId, patch);
-  if (!updated) throw new NotFoundError("Agency not found");
+  if (!updated) throw new NotFoundError("No encontramos la inmobiliaria.");
   return updated;
 }
 
@@ -58,11 +58,37 @@ export async function deleteOwn(agencyId: string) {
   );
   if (liveProperties > 0) {
     throw new ConflictError(
-      `Cannot delete the agency while it has ${liveProperties} PUBLICADA or RESERVADA properties`
+      `No se puede eliminar la inmobiliaria mientras tenga ${liveProperties} ${
+        liveProperties === 1
+          ? "propiedad publicada o reservada"
+          : "propiedades publicadas o reservadas"
+      }. Pausalas o dalas de baja primero.`
     );
   }
 
   await agencyRepository.deleteById(agencyId);
+}
+
+// `/api/agencies/:id` names the agency in the URL: only its owner may touch it.
+async function assertOwner(callerAgencyId: string, agencyId: string) {
+  await getAgency(agencyId); // 404 before 403: there is nothing to protect
+  if (agencyId !== callerAgencyId) {
+    throw new ForbiddenError("Esta inmobiliaria no es la tuya.");
+  }
+}
+
+export async function updateById(
+  callerAgencyId: string,
+  agencyId: string,
+  patch: UpdateAgencyInput
+) {
+  await assertOwner(callerAgencyId, agencyId);
+  return updateOwn(agencyId, patch);
+}
+
+export async function deleteById(callerAgencyId: string, agencyId: string) {
+  await assertOwner(callerAgencyId, agencyId);
+  await deleteOwn(agencyId);
 }
 
 // Public page: contact info, rating, latest listings and latest reviews.

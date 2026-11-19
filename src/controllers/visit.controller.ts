@@ -25,13 +25,19 @@ export const request = handler<{ id: string }>(async (req, { params }) => {
   return created(await visitService.request(propertyId, input));
 });
 
-// GET /api/agencies/me/visits?status=Pendiente
+// GET /api/agencies/me/visits?status=Pendiente&propertyId=
 export const listReceived = handler(async (req) => {
   const { agency } = await requireAgency();
-  const { status, ...pagination } = myVisitsQuerySchema.parse(queryOf(req));
+  const { status, propertyId, ...pagination } = myVisitsQuerySchema.parse(
+    queryOf(req)
+  );
 
   return paginated(
-    await visitService.listReceived(agency.id, { status }, pagination)
+    await visitService.listReceived(
+      agency.id,
+      { status, propertyId },
+      pagination
+    )
   );
 });
 

@@ -7,6 +7,7 @@ import { useAction } from "@/hooks/useAction";
 import { onConflict } from "@/lib/api/client";
 import { changeVisitStatus } from "@/lib/api/visits";
 import { formatDateTime } from "@/lib/format";
+import { cn } from "@/lib/utils";
 import {
   VISIT_ACTIONS,
   VISIT_STATUS_TONES,
@@ -17,9 +18,12 @@ import type { ReceivedVisit, VisitStatus } from "@/types/api";
 /** One visit request with the actions its state allows (none once it is over). */
 export function VisitCard({
   visit: received,
+  highlighted = false,
   onChanged,
 }: {
   visit: ReceivedVisit;
+  /** The one the seller came to see (from the activity feed). */
+  highlighted?: boolean;
   /** Asks the list to reload (only needed when someone else got there first). */
   onChanged: () => void;
 }) {
@@ -61,7 +65,13 @@ export function VisitCard({
   }
 
   return (
-    <li className="space-y-3 rounded-xl border border-slate-200 bg-white p-4">
+    <li
+      id={`visita-${visit.id}`}
+      className={cn(
+        "scroll-mt-20 space-y-3 rounded-xl border border-slate-200 bg-white p-4",
+        highlighted && "ring-2 ring-brand-500 ring-offset-2"
+      )}
+    >
       <div className="flex flex-wrap items-start justify-between gap-2">
         <p className="font-medium text-slate-900">{visit.requesterName}</p>
         <Badge tone={VISIT_STATUS_TONES[visit.status]}>{visit.status}</Badge>
