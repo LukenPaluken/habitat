@@ -1,7 +1,6 @@
 # Bun & Dependencies
 node_modules/
 bun.lockb
-bun.lock
 
 # Environment variables & secrets
 .env
