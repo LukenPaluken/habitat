@@ -96,3 +96,25 @@ export async function markAsCover(
     .set({ isCover: true })
     .where(eq(propertyImages.id, id));
 }
+
+export async function listByProperty(
+  propertyId: string,
+  executor: DbExecutor = db
+): Promise<PropertyImage[]> {
+  return executor
+    .select()
+    .from(propertyImages)
+    .where(eq(propertyImages.propertyId, propertyId))
+    .orderBy(asc(propertyImages.order));
+}
+
+export async function setOrder(
+  id: string,
+  order: number,
+  executor: DbExecutor = db
+): Promise<void> {
+  await executor
+    .update(propertyImages)
+    .set({ order })
+    .where(eq(propertyImages.id, id));
+}

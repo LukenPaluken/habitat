@@ -1,0 +1,332 @@
+# Habitat API: every endpoint, ready to run.
+#
+# Works with the "REST Client" extension of VS Code (and the HTTP client of
+# JetBrains IDEs). Start the app (`bun run dev`), seed it (`bun run db:seed`),
+# run "login" once and then any request: the session cookie is kept.
+#
+# The requests are chained: the ids they need are taken from the answers of
+# earlier ones (`{{name.response.body...}}`), so run them top to bottom.
+
+@baseUrl = http://localhost:3000
+@json = application/json
+
+###############################################################################
+# Health
+###############################################################################
+
+### Is the app (and its database) up?  ->  200 { "status": "ok" }
+GET {{baseUrl}}/api/health
+
+###############################################################################
+# Auth (Better Auth + the one-step seller registration)
+###############################################################################
+
+### Register a seller AND their agency in one step  ->  201 (409 if the email or the fantasy name is taken)
+POST {{baseUrl}}/api/auth/register-seller
+Content-Type: {{json}}
+
+{
+  "name": "Vendedor Demo",
+  "email": "vendedor.demo@example.com",
+  "password": "password123",
+  "fantasyName": "Inmobiliaria Demo",
+  "phone": "011-5555-0000"
+}
+
+### Log in as the demo seller of the seed (every seeded seller uses habitat123)
+# @name login
+POST {{baseUrl}}/api/auth/sign-in/email
+Content-Type: {{json}}
+
+{
+  "email": "lucia@inmobiliariadelsol.com",
+  "password": "habitat123"
+}
+
+### Who am I?
+GET {{baseUrl}}/api/auth/get-session
+
+###############################################################################
+# Public: property listing (only PUBLICADA, all accept ?page=&limit=&sort=)
+# sort: date_desc | date_asc | price_asc | price_desc | area_desc | area_asc
+###############################################################################
+
+### Everything published, or ANY combination of filters (what the Home page calls)
+# @name publicList
+GET {{baseUrl}}/api/properties?page=1&limit=12&sort=price_asc
+
+### Combined: type + operation + zone + price range (needs currency) + rooms + amenities + free text
+GET {{baseUrl}}/api/properties?type=Departamento&operation=Alquiler&neighborhood=Palermo&currency=USD&minPrice=100&maxPrice=1000&rooms=2&tag=balcón&q=vista
+
+### One filter per endpoint
+GET {{baseUrl}}/api/properties/type/Casa
+
+###
+GET {{baseUrl}}/api/properties/operation/Venta
+
+###
+GET {{baseUrl}}/api/properties/neighborhood/Palermo
+
+###
+GET {{baseUrl}}/api/properties/price?currency=USD&min=100000&max=200000
+
+###
+GET {{baseUrl}}/api/properties/rooms/3
+
+###
+GET {{baseUrl}}/api/properties/bedrooms/2
+
+###
+GET {{baseUrl}}/api/properties/bathrooms/1
+
+###
+GET {{baseUrl}}/api/properties/tags?tag=pileta&tag=cochera
+
+###
+GET {{baseUrl}}/api/properties/search?q=vista
+
+### Combos
+GET {{baseUrl}}/api/properties/type/Casa/operation/Venta
+
+###
+GET {{baseUrl}}/api/properties/type/Casa/operation/Venta/neighborhood/Ostende
+
+### Invalid filters answer 400 with the field that failed
+GET {{baseUrl}}/api/properties?minPrice=100
+
+###############################################################################
+# Public: one property, its questions and the visit request
+###############################################################################
+
+@publicPropertyId = {{publicList.response.body.$.data[0].id}}
+@agencyId = {{publicList.response.body.$.data[0].agency.id}}
+
+### Full detail: gallery, agency, questions with their replies  (404 for a draft or an unknown id)
+GET {{baseUrl}}/api/properties/{{publicPropertyId}}
+
+### The questions of a property (paginated, newest first)
+GET {{baseUrl}}/api/properties/{{publicPropertyId}}/comments?page=1&limit=10
+
+### Ask a question (no account)  ->  201 (400 without content)
+# @name askQuestion
+POST {{baseUrl}}/api/properties/{{publicPropertyId}}/comments
+Content-Type: {{json}}
+
+{ "authorName": "Visitante", "content": "¿Admite mascotas?" }
+
+### Ask for a visit  ->  201 (400 with a past date, 409 if the property is not PUBLICADA)
+POST {{baseUrl}}/api/properties/{{publicPropertyId}}/visits
+Content-Type: {{json}}
+
+{
+  "requesterName": "Visitante",
+  "requesterPhone": "011-4444-4444",
+  "proposedDate": "2030-01-15T15:00:00.000Z",
+  "message": "Puedo por la tarde"
+}
+
+###############################################################################
+# Public: an agency's site
+###############################################################################
+
+### Contact data, rating, properties and reviews of an agency
+GET {{baseUrl}}/api/agencies/{{agencyId}}
+
+### Its published properties (paginated)
+GET {{baseUrl}}/api/agencies/{{agencyId}}/properties?page=1&limit=6
+
+### Its reviews, with the total and the average
+GET {{baseUrl}}/api/agencies/{{agencyId}}/reviews?page=1&limit=5
+
+### Leave a review  ->  201 (400 with a rating outside 1-5 or no content)
+POST {{baseUrl}}/api/agencies/{{agencyId}}/reviews
+Content-Type: {{json}}
+
+{ "authorName": "Cliente", "content": "Muy buena atención", "rating": 5 }
+
+###############################################################################
+# Seller (needs the session of "login": 401 without it)
+###############################################################################
+
+### My agency
+GET {{baseUrl}}/api/agencies/me
+
+### Edit it (the fantasy name can't change; email is the PUBLIC contact email)
+PATCH {{baseUrl}}/api/agencies/me
+Content-Type: {{json}}
+
+{ "description": "Más de 15 años en el rubro.", "phone": "011-5555-5555" }
+
+### My properties, every state (optionally ?status=BORRADOR|PUBLICADA|RESERVADA|VENDIDA|ALQUILADA|PAUSADA|CANCELADA)
+GET {{baseUrl}}/api/agencies/me/properties?page=1&limit=10
+
+### Create a property (starts as BORRADOR unless "status": "PUBLICADA")  ->  201 (400 with price <= 0)
+# @name createProperty
+POST {{baseUrl}}/api/properties
+Content-Type: {{json}}
+
+{
+  "title": "Departamento de prueba",
+  "description": "Departamento luminoso para probar la API.",
+  "propertyType": "Departamento",
+  "operationType": "Venta",
+  "price": 120000,
+  "currency": "USD",
+  "totalArea": 70,
+  "coveredArea": 60,
+  "rooms": 3,
+  "bedrooms": 2,
+  "bathrooms": 1,
+  "age": 5,
+  "address": "Av. Siempre Viva 742",
+  "neighborhood": "Palermo",
+  "tags": ["balcón", "cochera"]
+}
+
+@propertyId = {{createProperty.response.body.$.data.id}}
+
+### Edit it (409 if it is VENDIDA/ALQUILADA/CANCELADA or has a confirmed visit)
+PATCH {{baseUrl}}/api/properties/{{propertyId}}
+Content-Type: {{json}}
+
+{ "price": 115000 }
+
+### Change its state: BORRADOR -> PUBLICADA -> RESERVADA -> VENDIDA/ALQUILADA, PAUSADA <-> PUBLICADA, CANCELADA (400 if the move is not allowed)
+PATCH {{baseUrl}}/api/properties/{{propertyId}}/status
+Content-Type: {{json}}
+
+{ "status": "PUBLICADA" }
+
+### Its state history, oldest first (only the owner)
+GET {{baseUrl}}/api/properties/{{propertyId}}/status-history
+
+### Add a photo (the first one becomes the cover). The file itself is uploaded to UploadThing
+# @name addImage
+POST {{baseUrl}}/api/properties/{{propertyId}}/images
+Content-Type: {{json}}
+
+{ "imageUrl": "https://picsum.photos/seed/api-http-1/1200/800" }
+
+@imageId = {{addImage.response.body.$.data.id}}
+
+###
+# @name addSecondImage
+POST {{baseUrl}}/api/properties/{{propertyId}}/images
+Content-Type: {{json}}
+
+{ "imageUrl": "https://picsum.photos/seed/api-http-2/1200/800" }
+
+@secondImageId = {{addSecondImage.response.body.$.data.id}}
+
+### Choose the cover
+PATCH {{baseUrl}}/api/properties/{{propertyId}}/images/{{secondImageId}}/cover
+
+### Reorder the gallery (the list must contain EVERY image once)
+PUT {{baseUrl}}/api/properties/{{propertyId}}/images/order
+Content-Type: {{json}}
+
+{ "imageIds": ["{{secondImageId}}", "{{imageId}}"] }
+
+### Remove a photo
+DELETE {{baseUrl}}/api/properties/{{propertyId}}/images/{{imageId}}
+
+### A throwaway draft...
+# @name createDraft
+POST {{baseUrl}}/api/properties
+Content-Type: {{json}}
+
+{
+  "title": "Borrador descartable",
+  "description": "Se crea solo para borrarlo en el próximo request.",
+  "propertyType": "Terreno",
+  "operationType": "Venta",
+  "price": 1000,
+  "totalArea": 100,
+  "address": "Calle 1 100",
+  "neighborhood": "Centro"
+}
+
+@draftId = {{createDraft.response.body.$.data.id}}
+
+### ...and delete it (only a BORRADOR: 409 once a property was published, close it with CANCELADA instead)
+DELETE {{baseUrl}}/api/properties/{{draftId}}
+
+###############################################################################
+# Seller: questions, visits, activity, reports
+###############################################################################
+
+### Questions received (?unanswered=true for the pending ones; meta.unanswered counts them)
+# @name receivedComments
+GET {{baseUrl}}/api/agencies/me/comments?unanswered=true
+
+@commentId = {{receivedComments.response.body.$.data[0].id}}
+
+### Reply to one, once  ->  200 (409 if it already has a reply, 403 if it is not yours)
+POST {{baseUrl}}/api/comments/{{commentId}}/reply
+Content-Type: {{json}}
+
+{ "sellerReply": "Sí, admite mascotas pequeñas." }
+
+### Visit requests received (?status=Pendiente|Confirmada|Realizada|Cancelada|Rechazada)
+# @name receivedVisits
+GET {{baseUrl}}/api/agencies/me/visits?status=Pendiente
+
+@visitId = {{receivedVisits.response.body.$.data[0].id}}
+
+### Answer one: Pendiente -> Confirmada -> Realizada, Rechazada / Cancelada at any time (409 otherwise)
+PATCH {{baseUrl}}/api/visits/{{visitId}}/status
+Content-Type: {{json}}
+
+{ "status": "Confirmada" }
+
+### The activity feed, newest first (?unread=true); meta.unreadCount
+# @name activities
+GET {{baseUrl}}/api/agencies/me/activities?page=1&limit=15
+
+@activityId = {{activities.response.body.$.data[0].id}}
+
+### Just the number for the notifications badge
+GET {{baseUrl}}/api/agencies/me/activities/unread-count
+
+### Mark one as read
+PATCH {{baseUrl}}/api/agencies/me/activities/{{activityId}}/read
+
+### Mark all as read
+PATCH {{baseUrl}}/api/agencies/me/activities/read-all
+
+### Reports: properties per state
+GET {{baseUrl}}/api/agencies/me/reports/status-summary
+
+### Reports: publications and closings per month (last 12)
+GET {{baseUrl}}/api/agencies/me/reports/monthly
+
+### Reports: average days on the market (null until something is sold or rented)
+GET {{baseUrl}}/api/agencies/me/reports/avg-time-on-market
+
+### Reports: the three together
+GET {{baseUrl}}/api/agencies/me/reports
+
+###############################################################################
+# End of the seller session
+###############################################################################
+
+### Log out (Better Auth wants the Origin header on requests that carry the session cookie)
+POST {{baseUrl}}/api/auth/sign-out
+Content-Type: {{json}}
+Origin: {{baseUrl}}
+
+{}
+
+###############################################################################
+# DANGER: deletes YOUR agency and everything it has (409 while it has PUBLICADA
+# or RESERVADA properties). Run it on purpose.
+###############################################################################
+
+### Delete my agency
+DELETE {{baseUrl}}/api/agencies/me
+
+###############################################################################
+# Not listed here: `/api/uploadthing` is the upload endpoint of UploadThing's
+# SDK (the photo picker in "Mis propiedades" talks to it), and the rest of
+# `/api/auth/*` is Better Auth's own.
+###############################################################################

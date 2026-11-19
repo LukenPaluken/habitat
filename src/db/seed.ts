@@ -695,6 +695,8 @@ async function createInteractions(
     feed.push({
       agencyId: agencyOf(comment.propertyId),
       type: "new_comment",
+      propertyId: comment.propertyId,
+      referenceId: comment.id,
       content: `${comment.authorName} hizo una consulta en "${titleOf(comment.propertyId)}".`,
       isRead: isRead(comment.createdAt),
       createdAt: comment.createdAt,
@@ -704,6 +706,8 @@ async function createInteractions(
     feed.push({
       agencyId: agencyOf(visit.propertyId),
       type: "new_visit",
+      propertyId: visit.propertyId,
+      referenceId: visit.id,
       content: `${visit.requesterName} solicitó una visita a "${titleOf(visit.propertyId)}".`,
       isRead: isRead(visit.createdAt),
       createdAt: visit.createdAt,
@@ -713,6 +717,7 @@ async function createInteractions(
     feed.push({
       agencyId: review.agencyId,
       type: "new_review",
+      referenceId: review.id,
       content: `${review.authorName} dejó una reseña de ${review.rating} ${
         review.rating === 1 ? "estrella" : "estrellas"
       }.`,
@@ -727,6 +732,8 @@ async function createInteractions(
     feed.push({
       agencyId: property.agencyId,
       type: "property_state_change",
+      propertyId: property.id,
+      referenceId: property.id,
       content: `La propiedad "${property.title}" cambió su estado a ${newState}.`,
       isRead: isRead(daysAgo(ago)),
       createdAt: daysAgo(ago),

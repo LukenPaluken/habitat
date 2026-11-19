@@ -55,6 +55,8 @@ export async function request(propertyId: string, input: RequestVisitInput) {
       {
         agencyId: property.agencyId,
         type: "new_visit",
+        propertyId,
+        referenceId: visit.id,
         content: `${input.requesterName} solicitó una visita a "${property.title}".`,
       },
       tx

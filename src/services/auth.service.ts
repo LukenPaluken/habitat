@@ -17,12 +17,15 @@ export async function registerSeller(
 
   if (await agencyRepository.findByFantasyName(fantasyName)) {
     throw new ConflictError(
-      "El nombre de fantasía ya está en uso por otra inmobiliaria."
+      "El nombre de fantasía ya está en uso por otra inmobiliaria.",
+      { field: "fantasyName" }
     );
   }
 
   if (await userRepository.findByEmail(email)) {
-    throw new ConflictError("El correo electrónico ya está registrado.");
+    throw new ConflictError("El correo electrónico ya está registrado.", {
+      field: "email",
+    });
   }
 
   let createdUser;
@@ -47,7 +50,7 @@ export async function registerSeller(
       userId: createdUser.id,
       fantasyName,
       description: input.description?.trim() || `Inmobiliaria ${fantasyName}`,
-      phone: input.phone.trim(),
+      phone: input.phone?.trim() ?? "",
       email,
       address: input.address?.trim() || null,
       logoUrl: input.logoUrl || null,

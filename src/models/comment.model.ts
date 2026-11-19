@@ -7,7 +7,10 @@ export const comments = pgTable(
     id: uuid("id").defaultRandom().primaryKey(),
     propertyId: uuid("property_id")
       .notNull()
-      .references(() => properties.id, { onDelete: "cascade" }),
+      .references(() => properties.id, {
+        onDelete: "cascade",
+        onUpdate: "no action",
+      }),
     authorName: text("author_name").notNull(),
     content: text("content").notNull(),
     sellerReply: text("seller_reply"),

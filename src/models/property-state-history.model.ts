@@ -9,7 +9,10 @@ export const propertyStateHistory = pgTable(
     id: uuid("id").defaultRandom().primaryKey(),
     propertyId: uuid("property_id")
       .notNull()
-      .references(() => properties.id, { onDelete: "cascade" }),
+      .references(() => properties.id, {
+        onDelete: "cascade",
+        onUpdate: "no action",
+      }),
     previousState: propertyStatusEnum("previous_state"),
     newState: propertyStatusEnum("new_state").notNull(),
     createdAt: timestamp("created_at").defaultNow().notNull(),

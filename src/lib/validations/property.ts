@@ -59,5 +59,10 @@ export const addImageSchema = z.object({
   imageUrl: z.string().url(),
 });
 
+// The whole gallery, in the new order (first one is shown first).
+export const reorderImagesSchema = z.object({
+  imageIds: z.array(z.string().uuid()).min(1),
+});
+
 export type CreatePropertyInput = z.infer<typeof createPropertySchema>;
 export type UpdatePropertyInput = z.infer<typeof updatePropertySchema>;

@@ -30,7 +30,7 @@ export const session = pgTable("session", {
   userAgent: text("user_agent"),
   userId: text("user_id")
     .notNull()
-    .references(() => user.id, { onDelete: "cascade" }),
+    .references(() => user.id, { onDelete: "cascade", onUpdate: "no action" }),
 });
 
 // Better Auth >= 1.7 scopes an account's identity by `issuer` ("local:credential"
@@ -39,12 +39,19 @@ export const account = pgTable(
   "account",
   {
     id: text("id").primaryKey(),
-    issuer: text("issuer").notNull(),
+    // Better Auth 1.7.0-1.7.2 wrote this column; later 1.7.x versions don't and
+    // refuse a REQUIRED column they never fill ("Drizzle schema mismatch": every
+    // sign-up would fail). The default keeps both working, and keeps the value
+    // the backfill of migration 0001 gave to the existing rows.
+    issuer: text("issuer").notNull().default("local:credential"),
     accountId: text("account_id").notNull(),
     providerId: text("provider_id").notNull(),
     userId: text("user_id")
       .notNull()
-      .references(() => user.id, { onDelete: "cascade" }),
+      .references(() => user.id, {
+        onDelete: "cascade",
+        onUpdate: "no action",
+      }),
     accessToken: text("access_token"),
     refreshToken: text("refresh_token"),
     idToken: text("id_token"),

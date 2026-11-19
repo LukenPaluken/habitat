@@ -60,6 +60,44 @@ export const priceQuerySchema = z
     message: "min cannot be greater than max",
   });
 
+// The Home page combines several filters at once, so `GET /api/properties`
+// also accepts all of them in the query string (every one is optional):
+//   ?type=Casa&operation=Venta&q=pileta&neighborhood=Palermo
+//   &currency=USD&minPrice=100000&maxPrice=200000&rooms=3&tag=pileta&tag=cochera
+// A form sends untouched inputs as `key=`, so an empty string means "no filter".
+function optional<T extends z.ZodTypeAny>(schema: T) {
+  return z.preprocess(
+    (value) => (value === "" ? undefined : value),
+    schema.optional()
+  );
+}
+
+export const combinedSearchQuerySchema = listQuerySchema
+  .extend({
+    type: optional(typeParam),
+    operation: optional(operationParam),
+    q: optional(searchTextQuerySchema.shape.q),
+    neighborhood: optional(z.string().trim().min(2).max(100)),
+    currency: optional(z.enum(currencyEnum.enumValues)),
+    minPrice: optional(z.coerce.number().positive()),
+    maxPrice: optional(z.coerce.number().positive()),
+    rooms: optional(minCountParam),
+    tag: z.array(tagsQuerySchema.shape.tag.element).default([]),
+  })
+  .refine(
+    (q) =>
+      (q.minPrice === undefined && q.maxPrice === undefined) ||
+      q.currency !== undefined,
+    { message: "currency is required when minPrice or maxPrice is given" }
+  )
+  .refine(
+    (q) =>
+      q.minPrice === undefined ||
+      q.maxPrice === undefined ||
+      q.minPrice <= q.maxPrice,
+    { message: "minPrice cannot be greater than maxPrice" }
+  );
+
 // Agency's own properties: any status, optionally narrowed to one.
 export const myPropertiesQuerySchema = listQuerySchema.extend({
   status: z.enum(propertyStatusEnum.enumValues).optional(),

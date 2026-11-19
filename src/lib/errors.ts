@@ -36,7 +36,11 @@ export class NotFoundError extends Error {
 }
 
 export class ConflictError extends Error {
-  constructor(message: string) {
+  constructor(
+    message: string,
+    /** Optional, e.g. `{ field: "email" }`, so a form can mark the culprit. */
+    public readonly details?: unknown
+  ) {
     super(message);
     this.name = "ConflictError";
   }

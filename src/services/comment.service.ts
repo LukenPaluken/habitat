@@ -27,6 +27,8 @@ export async function ask(propertyId: string, input: CreateCommentInput) {
       {
         agencyId: property.agencyId,
         type: "new_comment",
+        propertyId,
+        referenceId: comment.id,
         content: `${input.authorName} hizo una consulta en "${property.title}".`,
       },
       tx
@@ -34,6 +36,18 @@ export async function ask(propertyId: string, input: CreateCommentInput) {
 
     return comment;
   });
+}
+
+// Public: the questions on a property (drafts don't exist for the public).
+export async function listForProperty(
+  propertyId: string,
+  pagination: PaginationParams
+) {
+  const property = await propertyRepository.findById(propertyId);
+  if (!property || property.status === "BORRADOR") {
+    throw new NotFoundError("Property not found");
+  }
+  return commentRepository.listByProperty(propertyId, pagination);
 }
 
 // One level only: a comment gets a single reply, from the agency that owns the

@@ -23,7 +23,10 @@ export const properties = pgTable(
     id: uuid("id").defaultRandom().primaryKey(),
     agencyId: uuid("agency_id")
       .notNull()
-      .references(() => agencies.id, { onDelete: "cascade" }),
+      .references(() => agencies.id, {
+        onDelete: "cascade",
+        onUpdate: "no action",
+      }),
     title: text("title").notNull(),
     description: text("description").notNull(),
     propertyType: propertyTypeEnum("property_type").notNull(),

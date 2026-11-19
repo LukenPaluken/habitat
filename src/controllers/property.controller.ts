@@ -13,6 +13,7 @@ import {
   paginated,
   queryOf,
   readJson,
+  success,
   uuidParam,
 } from "./http";
 
@@ -38,6 +39,15 @@ export const getById = handler<IdParams>(async (_request, { params }) => {
   const viewer = await getCurrentAgency();
 
   return ok(await propertyService.getDetail(id, viewer?.id));
+});
+
+// DELETE /api/properties/:id  (only a draft; anything published is closed with CANCELADA)
+export const removeDraft = handler<IdParams>(async (_request, { params }) => {
+  const id = uuidParam((await params).id);
+  const { agency } = await requireAgency();
+
+  await propertyService.removeDraft(agency.id, id);
+  return success();
 });
 
 // PATCH /api/properties/:id
@@ -68,4 +78,12 @@ export const listOwn = handler(async (request) => {
   return paginated(
     await propertyService.listOwn(agency.id, { status }, listing)
   );
+});
+
+// GET /api/properties/:id/status-history  (the owner's audit log, oldest first)
+export const statusHistory = handler<IdParams>(async (_request, { params }) => {
+  const id = uuidParam((await params).id);
+  const { agency } = await requireAgency();
+
+  return ok(await propertyService.getStatusHistory(agency.id, id));
 });

@@ -1,4 +1,4 @@
-import { NotFoundError } from "@/lib/errors";
+import { NotFoundError, ValidationError } from "@/lib/errors";
 import { withTransaction } from "@/repositories/executor";
 import * as imageRepository from "@/repositories/property-image.repository";
 import * as propertyService from "./property.service";
@@ -63,5 +63,34 @@ export async function setCover(
   await withTransaction(async (tx) => {
     await imageRepository.clearCover(propertyId, tx);
     await imageRepository.markAsCover(imageId, tx);
+  });
+}
+
+// Reorders the gallery. The new order must list EVERY image of the property
+// exactly once, so a stale screen can't silently drop or duplicate photos.
+export async function reorder(
+  agencyId: string,
+  propertyId: string,
+  imageIds: string[]
+) {
+  await propertyService.getOwnedProperty(agencyId, propertyId);
+
+  return withTransaction(async (tx) => {
+    const current = await imageRepository.listByProperty(propertyId, tx);
+    const currentIds = new Set(current.map((image) => image.id));
+    const sameSet =
+      imageIds.length === currentIds.size &&
+      new Set(imageIds).size === imageIds.length &&
+      imageIds.every((id) => currentIds.has(id));
+    if (!sameSet) {
+      throw new ValidationError(
+        "imageIds must list every image of the property exactly once"
+      );
+    }
+
+    for (const [position, id] of imageIds.entries()) {
+      await imageRepository.setOrder(id, position, tx);
+    }
+    return imageRepository.listByProperty(propertyId, tx);
   });
 }

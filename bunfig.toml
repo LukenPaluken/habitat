@@ -1,0 +1,4 @@
+# `bun test` runs the integration tests in ./tests against an ISOLATED database
+# (see tests/setup.ts): never the development one.
+[test]
+preload = ["./tests/setup.ts"]

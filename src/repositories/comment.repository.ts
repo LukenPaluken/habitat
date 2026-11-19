@@ -97,3 +97,25 @@ export async function countUnansweredByAgency(
     );
   return total;
 }
+
+// The questions on one property, newest first, each with its reply (if any).
+export async function listByProperty(
+  propertyId: string,
+  pagination: PaginationParams,
+  executor: DbExecutor = db
+): Promise<Paginated<Comment>> {
+  const where = eq(comments.propertyId, propertyId);
+
+  const [items, [{ total }]] = await Promise.all([
+    executor
+      .select()
+      .from(comments)
+      .where(where)
+      .orderBy(desc(comments.createdAt))
+      .limit(pagination.limit)
+      .offset(offsetOf(pagination)),
+    executor.select({ total: count() }).from(comments).where(where),
+  ]);
+
+  return { items, page: pagination.page, limit: pagination.limit, total };
+}

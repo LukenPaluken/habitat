@@ -1,3 +1,4 @@
+import { asc, eq } from "drizzle-orm";
 import {
   propertyStateHistory,
   type NewPropertyStateHistory,
@@ -17,4 +18,16 @@ export async function create(
     .values(values)
     .returning();
   return created;
+}
+
+// Every change of a property, oldest first (the order they happened in).
+export async function listByProperty(
+  propertyId: string,
+  executor: DbExecutor = db
+): Promise<PropertyStateHistory[]> {
+  return executor
+    .select()
+    .from(propertyStateHistory)
+    .where(eq(propertyStateHistory.propertyId, propertyId))
+    .orderBy(asc(propertyStateHistory.createdAt), asc(propertyStateHistory.id));
 }
